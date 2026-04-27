@@ -1,0 +1,53 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: consulting-pm
+
+resources:
+  - namespace.yaml
+  - infra/resource-quotas.yaml
+  - infra/redis.yaml
+  - infra/minio.yaml
+  - ingress/ingress.yaml
+  - gateway/deployment.yaml
+  - gateway/service.yaml
+  - gateway/hpa.yaml
+  - gateway/configmap.yaml
+  - gateway/pdb.yaml
+  - gateway/networkpolicy.yaml
+  - auth/deployment.yaml
+  - auth/service.yaml
+  - auth/hpa.yaml
+  - auth/configmap.yaml
+  - auth/pdb.yaml
+  - auth/networkpolicy.yaml
+  - projects/deployment.yaml
+  - projects/service.yaml
+  - projects/hpa.yaml
+  - projects/configmap.yaml
+  - projects/pdb.yaml
+  - projects/networkpolicy.yaml
+  - timelog/deployment.yaml
+  - timelog/service.yaml
+  - timelog/hpa.yaml
+  - timelog/configmap.yaml
+  - timelog/pdb.yaml
+  - timelog/networkpolicy.yaml
+  - billing/deployment.yaml
+  - billing/service.yaml
+  - billing/hpa.yaml
+  - billing/configmap.yaml
+  - billing/pdb.yaml
+  - billing/networkpolicy.yaml
+  - resources/deployment.yaml
+  - resources/service.yaml
+  - resources/hpa.yaml
+  - resources/configmap.yaml
+  - resources/pdb.yaml
+  - resources/networkpolicy.yaml
+  - notifications/deployment.yaml
+  - notifications/service.yaml
+  - notifications/hpa.yaml
+  - notifications/configmap.yaml
+  - notifications/pdb.yaml
+  - notifications/networkpolicy.yaml

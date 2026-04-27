@@ -1,0 +1,403 @@
+version: "3.9"
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - consulting-pm
+
+x-pg-healthcheck: &pg-healthcheck
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+    interval: 5s
+    timeout: 5s
+    retries: 10
+
+services:
+  # ─── Infrastructure ──────────────────────────────────────────────────────────
+
+  postgres-auth:
+    <<: [*service-defaults, *pg-healthcheck]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: auth_pass
+      POSTGRES_DB: auth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-auth-data:/var/lib/postgresql/data
+
+  postgres-projects:
+    <<: [*service-defaults, *pg-healthcheck]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: projects
+      POSTGRES_PASSWORD: projects_pass
+      POSTGRES_DB: projects_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg-projects-data:/var/lib/postgresql/data
+
+  postgres-timelog:
+    <<: [*service-defaults, *pg-healthcheck]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: timelog
+      POSTGRES_PASSWORD: timelog_pass
+      POSTGRES_DB: timelog_db
+    ports:
+      - "5434:5432"
+    volumes:
+      - pg-timelog-data:/var/lib/postgresql/data
+
+  postgres-billing:
+    <<: [*service-defaults, *pg-healthcheck]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: billing
+      POSTGRES_PASSWORD: billing_pass
+      POSTGRES_DB: billing_db
+    ports:
+      - "5435:5432"
+    volumes:
+      - pg-billing-data:/var/lib/postgresql/data
+
+  postgres-resources:
+    <<: [*service-defaults, *pg-healthcheck]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: resources
+      POSTGRES_PASSWORD: resources_pass
+      POSTGRES_DB: resources_db
+    ports:
+      - "5436:5432"
+    volumes:
+      - pg-resources-data:/var/lib/postgresql/data
+
+  postgres-notifications:
+    <<: [*service-defaults, *pg-healthcheck]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: notifications
+      POSTGRES_PASSWORD: notif_pass
+      POSTGRES_DB: notifications_db
+    ports:
+      - "5437:5432"
+    volumes:
+      - pg-notifications-data:/var/lib/postgresql/data
+
+  redis:
+    <<: *service-defaults
+    image: redis:7-alpine
+    command: redis-server --appendonly yes --appendfsync everysec
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    <<: *service-defaults
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio-init:
+    <<: *service-defaults
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: no
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 minioadmin minioadmin123;
+        mc mb --ignore-existing local/attachments;
+        mc mb --ignore-existing local/invoices;
+        mc anonymous set download local/invoices;
+      "
+
+  # ─── Application Services ────────────────────────────────────────────────────
+
+  auth:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/auth/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/auth/app:/app/app
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://auth:auth_pass@postgres-auth:5432/auth_db
+      REDIS_URL: redis://redis:6379/0
+      JWT_PRIVATE_KEY_PATH: /app/keys/private.pem
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      LOG_LEVEL: DEBUG
+      CORS_ORIGINS: http://localhost:3000
+    env_file: .env
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  gateway:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/gateway/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/gateway/app:/app/app
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      JWT_PUBLIC_KEY_PATH: /app/keys/public.pem
+      AUTH_SERVICE_URL: http://auth:8001
+      PROJECTS_SERVICE_URL: http://projects:8002
+      TIMELOG_SERVICE_URL: http://timelog:8003
+      BILLING_SERVICE_URL: http://billing:8004
+      RESOURCES_SERVICE_URL: http://resources:8005
+      NOTIFICATIONS_SERVICE_URL: http://notifications:8006
+      LOG_LEVEL: DEBUG
+    env_file: .env
+    depends_on:
+      - auth
+      - projects
+      - timelog
+      - billing
+      - resources
+      - notifications
+      - redis
+
+  projects:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/projects/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/projects/app:/app/app
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://projects:projects_pass@postgres-projects:5432/projects_db
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET_ATTACHMENTS: attachments
+      MINIO_USE_SSL: "false"
+      LOG_LEVEL: DEBUG
+      CORS_ORIGINS: http://localhost:3000
+    env_file: .env
+    depends_on:
+      postgres-projects:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  timelog:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/timelog/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/timelog/app:/app/app
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://timelog:timelog_pass@postgres-timelog:5432/timelog_db
+      REDIS_URL: redis://redis:6379/0
+      LOG_LEVEL: DEBUG
+      CORS_ORIGINS: http://localhost:3000
+    env_file: .env
+    depends_on:
+      postgres-timelog:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  billing:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/billing/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/billing/app:/app/app
+    ports:
+      - "8004:8004"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://billing:billing_pass@postgres-billing:5432/billing_db
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET_INVOICES: invoices
+      MINIO_USE_SSL: "false"
+      TIMELOG_SERVICE_URL: http://timelog:8003
+      LOG_LEVEL: DEBUG
+      CORS_ORIGINS: http://localhost:3000
+    env_file: .env
+    depends_on:
+      postgres-billing:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  billing-worker:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/billing/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/billing/app:/app/app
+    command: celery -A app.tasks.celery_app worker --loglevel=info --queues=billing
+    environment:
+      DATABASE_URL: postgresql+asyncpg://billing:billing_pass@postgres-billing:5432/billing_db
+      REDIS_URL: redis://redis:6379/0
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_BUCKET_INVOICES: invoices
+      MINIO_USE_SSL: "false"
+    env_file: .env
+    depends_on:
+      postgres-billing:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  resources:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/resources/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/resources/app:/app/app
+    ports:
+      - "8005:8005"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://resources:resources_pass@postgres-resources:5432/resources_db
+      REDIS_URL: redis://redis:6379/0
+      LOG_LEVEL: DEBUG
+      CORS_ORIGINS: http://localhost:3000
+    env_file: .env
+    depends_on:
+      postgres-resources:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  notifications:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/notifications/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/notifications/app:/app/app
+    ports:
+      - "8006:8006"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://notifications:notif_pass@postgres-notifications:5432/notifications_db
+      REDIS_URL: redis://redis:6379/0
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+      SMTP_FROM: noreply@consulting-pm.local
+      LOG_LEVEL: DEBUG
+      CORS_ORIGINS: http://localhost:3000
+    env_file: .env
+    depends_on:
+      postgres-notifications:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  notifications-worker:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/notifications/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/notifications/app:/app/app
+    command: celery -A app.tasks.celery_app worker --loglevel=info --queues=notifications
+    environment:
+      DATABASE_URL: postgresql+asyncpg://notifications:notif_pass@postgres-notifications:5432/notifications_db
+      REDIS_URL: redis://redis:6379/0
+      SMTP_HOST: mailhog
+      SMTP_PORT: "1025"
+      SMTP_FROM: noreply@consulting-pm.local
+    env_file: .env
+    depends_on:
+      postgres-notifications:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: services/billing/Dockerfile
+      target: development
+    volumes:
+      - ./shared:/app/shared
+      - ./services/billing/app:/app/app
+    command: celery -A app.tasks.celery_app beat --loglevel=info --scheduler celery.beat:PersistentScheduler
+    environment:
+      DATABASE_URL: postgresql+asyncpg://billing:billing_pass@postgres-billing:5432/billing_db
+      REDIS_URL: redis://redis:6379/0
+    env_file: .env
+    depends_on:
+      - redis
+
+networks:
+  consulting-pm:
+    driver: bridge
+
+volumes:
+  pg-auth-data:
+  pg-projects-data:
+  pg-timelog-data:
+  pg-billing-data:
+  pg-resources-data:
+  pg-notifications-data:
+  redis-data:
+  minio-data:

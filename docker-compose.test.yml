@@ -1,0 +1,154 @@
+version: "3.9"
+
+# CI integration-test stack — same infra as dev but no volume mounts,
+# no host-port conflicts, and restart: no for one-shot test runs.
+# Usage: docker compose -f docker-compose.test.yml up --abort-on-container-exit
+
+x-pg-healthcheck: &pg-healthcheck
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+    interval: 3s
+    timeout: 3s
+    retries: 15
+
+services:
+  postgres-auth-test:
+    <<: *pg-healthcheck
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: auth_pass
+      POSTGRES_DB: auth_db
+    networks: [test]
+
+  postgres-projects-test:
+    <<: *pg-healthcheck
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: projects
+      POSTGRES_PASSWORD: projects_pass
+      POSTGRES_DB: projects_db
+    networks: [test]
+
+  postgres-timelog-test:
+    <<: *pg-healthcheck
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: timelog
+      POSTGRES_PASSWORD: timelog_pass
+      POSTGRES_DB: timelog_db
+    networks: [test]
+
+  postgres-billing-test:
+    <<: *pg-healthcheck
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: billing
+      POSTGRES_PASSWORD: billing_pass
+      POSTGRES_DB: billing_db
+    networks: [test]
+
+  postgres-resources-test:
+    <<: *pg-healthcheck
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: resources
+      POSTGRES_PASSWORD: resources_pass
+      POSTGRES_DB: resources_db
+    networks: [test]
+
+  postgres-notifications-test:
+    <<: *pg-healthcheck
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: notifications
+      POSTGRES_PASSWORD: notif_pass
+      POSTGRES_DB: notifications_db
+    networks: [test]
+
+  redis-test:
+    image: redis:7-alpine
+    networks: [test]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      retries: 10
+
+  minio-test:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    networks: [test]
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      retries: 10
+
+  minio-init-test:
+    image: minio/mc:latest
+    depends_on:
+      minio-test:
+        condition: service_healthy
+    restart: no
+    networks: [test]
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio-test:9000 minioadmin minioadmin123;
+        mc mb --ignore-existing local/attachments;
+        mc mb --ignore-existing local/invoices;
+      "
+
+  test-runner:
+    image: python:3.12-slim
+    restart: no
+    networks: [test]
+    depends_on:
+      postgres-auth-test:
+        condition: service_healthy
+      postgres-projects-test:
+        condition: service_healthy
+      postgres-timelog-test:
+        condition: service_healthy
+      postgres-billing-test:
+        condition: service_healthy
+      postgres-resources-test:
+        condition: service_healthy
+      postgres-notifications-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+      minio-init-test:
+        condition: service_completed_successfully
+    environment:
+      AUTH_DATABASE_URL: postgresql+asyncpg://auth:auth_pass@postgres-auth-test:5432/auth_db
+      PROJECTS_DATABASE_URL: postgresql+asyncpg://projects:projects_pass@postgres-projects-test:5432/projects_db
+      TIMELOG_DATABASE_URL: postgresql+asyncpg://timelog:timelog_pass@postgres-timelog-test:5432/timelog_db
+      BILLING_DATABASE_URL: postgresql+asyncpg://billing:billing_pass@postgres-billing-test:5432/billing_db
+      RESOURCES_DATABASE_URL: postgresql+asyncpg://resources:resources_pass@postgres-resources-test:5432/resources_db
+      NOTIFICATIONS_DATABASE_URL: postgresql+asyncpg://notifications:notif_pass@postgres-notifications-test:5432/notifications_db
+      REDIS_URL: redis://redis-test:6379/0
+      MINIO_ENDPOINT: minio-test:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin123
+      MINIO_USE_SSL: "false"
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    command: >
+      bash -c "
+        pip install -q -e shared/ &&
+        pip install -q -e services/auth/ &&
+        pip install -q -e services/projects/ &&
+        pip install -q -e services/timelog/ &&
+        pip install -q -e services/billing/ &&
+        pip install -q -e services/resources/ &&
+        pip install -q -e services/notifications/ &&
+        pytest services/auth/app/tests services/projects/app/tests services/timelog/app/tests services/billing/app/tests services/resources/app/tests services/notifications/app/tests
+          --cov --cov-fail-under=80 -v
+      "
+
+networks:
+  test:
+    driver: bridge
