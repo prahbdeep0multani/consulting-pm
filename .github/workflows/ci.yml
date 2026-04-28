@@ -1,0 +1,282 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─── Detect which services changed ─────────────────────────────────────────
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      shared: ${{ steps.filter.outputs.shared }}
+      gateway: ${{ steps.filter.outputs.gateway }}
+      auth: ${{ steps.filter.outputs.auth }}
+      projects: ${{ steps.filter.outputs.projects }}
+      timelog: ${{ steps.filter.outputs.timelog }}
+      billing: ${{ steps.filter.outputs.billing }}
+      resources: ${{ steps.filter.outputs.resources }}
+      notifications: ${{ steps.filter.outputs.notifications }}
+      services: ${{ steps.filter.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared:
+              - 'shared/**'
+            gateway:
+              - 'services/gateway/**'
+              - 'shared/**'
+            auth:
+              - 'services/auth/**'
+              - 'shared/**'
+            projects:
+              - 'services/projects/**'
+              - 'shared/**'
+            timelog:
+              - 'services/timelog/**'
+              - 'shared/**'
+            billing:
+              - 'services/billing/**'
+              - 'shared/**'
+            resources:
+              - 'services/resources/**'
+              - 'shared/**'
+            notifications:
+              - 'services/notifications/**'
+              - 'shared/**'
+            services:
+              - 'services/**'
+              - 'shared/**'
+
+  # ─── Lint + Type Check ──────────────────────────────────────────────────────
+  lint-and-type-check:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [shared, gateway, auth, projects, timelog, billing, resources, notifications]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install shared + service
+        run: |
+          pip install -e shared/
+          if [ "${{ matrix.service }}" != "shared" ]; then
+            pip install -e services/${{ matrix.service }}/
+          fi
+          pip install ruff mypy
+
+      - name: Ruff lint
+        run: |
+          if [ "${{ matrix.service }}" == "shared" ]; then
+            ruff check shared/
+            ruff format --check shared/
+          else
+            ruff check services/${{ matrix.service }}/
+            ruff format --check services/${{ matrix.service }}/
+          fi
+
+      - name: mypy type check
+        run: |
+          if [ "${{ matrix.service }}" == "shared" ]; then
+            mypy shared/
+          else
+            mypy services/${{ matrix.service }}/app/
+          fi
+
+  # ─── Tests ──────────────────────────────────────────────────────────────────
+  test:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: auth
+            db_user: auth
+            db_pass: auth_pass
+            db_name: auth_db
+            db_port: 5432
+          - service: projects
+            db_user: projects
+            db_pass: projects_pass
+            db_name: projects_db
+            db_port: 5432
+          - service: timelog
+            db_user: timelog
+            db_pass: timelog_pass
+            db_name: timelog_db
+            db_port: 5432
+          - service: billing
+            db_user: billing
+            db_pass: billing_pass
+            db_name: billing_db
+            db_port: 5432
+          - service: resources
+            db_user: resources
+            db_pass: resources_pass
+            db_name: resources_db
+            db_port: 5432
+          - service: notifications
+            db_user: notifications
+            db_pass: notif_pass
+            db_name: notifications_db
+            db_port: 5432
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ${{ matrix.db_user }}
+          POSTGRES_PASSWORD: ${{ matrix.db_pass }}
+          POSTGRES_DB: ${{ matrix.db_name }}
+        ports:
+          - ${{ matrix.db_port }}:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin123
+        ports:
+          - 9000:9000
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/live"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -e shared/
+          pip install -e services/${{ matrix.service }}/
+          pip install pytest pytest-asyncio pytest-cov httpx
+
+      - name: Run Alembic migrations
+        env:
+          DATABASE_URL: postgresql+asyncpg://${{ matrix.db_user }}:${{ matrix.db_pass }}@localhost:5432/${{ matrix.db_name }}
+        run: |
+          cd services/${{ matrix.service }}
+          alembic upgrade head
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://${{ matrix.db_user }}:${{ matrix.db_pass }}@localhost:5432/${{ matrix.db_name }}
+          REDIS_URL: redis://localhost:6379/0
+          MINIO_ENDPOINT: localhost:9000
+          MINIO_ACCESS_KEY: minioadmin
+          MINIO_SECRET_KEY: minioadmin123
+          MINIO_USE_SSL: "false"
+        run: |
+          pytest services/${{ matrix.service }}/app/tests/ \
+            --cov=services/${{ matrix.service }}/app \
+            --cov-report=xml \
+            --cov-fail-under=80 \
+            -v
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          flags: ${{ matrix.service }}
+
+  # ─── Docker Build (verify, no push) ─────────────────────────────────────────
+  build-docker:
+    needs: [lint-and-type-check, test]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [gateway, auth, projects, timelog, billing, resources, notifications]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.service }} image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          target: production
+          push: false
+          tags: consulting-pm/${{ matrix.service }}:ci-${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # ─── Security Scan ──────────────────────────────────────────────────────────
+  security-scan:
+    needs: build-docker
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [gateway, auth, projects, timelog, billing, resources, notifications]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image for scanning
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          target: production
+          load: true
+          tags: consulting-pm/${{ matrix.service }}:scan
+          cache-from: type=gha,scope=${{ matrix.service }}
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: consulting-pm/${{ matrix.service }}:scan
+          format: sarif
+          output: trivy-${{ matrix.service }}.sarif
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-${{ matrix.service }}.sarif
+          category: trivy-${{ matrix.service }}

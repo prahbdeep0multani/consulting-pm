@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-gateway
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: gateway
+spec:
+  replicas: {{ .Values.gateway.replicaCount }}
+  selector:
+    matchLabels:
+      app: gateway
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: gateway
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: gateway
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.gateway "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.gateway.service.port }}
+          env:
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+            - name: AUTH_SERVICE_URL
+              value: "http://{{ .Release.Name }}-auth:8001"
+            - name: PROJECTS_SERVICE_URL
+              value: "http://{{ .Release.Name }}-projects:8002"
+            - name: TIMELOG_SERVICE_URL
+              value: "http://{{ .Release.Name }}-timelog:8003"
+            - name: BILLING_SERVICE_URL
+              value: "http://{{ .Release.Name }}-billing:8004"
+            - name: RESOURCES_SERVICE_URL
+              value: "http://{{ .Release.Name }}-resources:8005"
+            - name: NOTIFICATIONS_SERVICE_URL
+              value: "http://{{ .Release.Name }}-notifications:8006"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-gateway-secret
+                optional: true
+          resources:
+            {{- toYaml .Values.gateway.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.gateway.service.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.gateway.service.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: timelog
+  labels:
+    app: timelog
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: timelog
+  template:
+    metadata:
+      labels:
+        app: timelog
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: timelog
+          image: consulting-pm/timelog:latest
+          ports:
+            - containerPort: 8003
+          envFrom:
+            - configMapRef:
+                name: timelog-config
+            - secretRef:
+                name: timelog-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8003
+            initialDelaySeconds: 20
+            periodSeconds: 30

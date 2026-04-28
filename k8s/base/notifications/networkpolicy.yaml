@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: notifications
+spec:
+  podSelector:
+    matchLabels:
+      app: notifications
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: gateway
+      ports:
+        - port: 8006
+  egress:
+    - ports:
+        - port: 5432
+        - port: 6379
+        - port: 587   # SMTP
+        - port: 465   # SMTP TLS
+        - port: 53
+      protocol: UDP
+    - ports:
+        - port: 53
+      protocol: UDP

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-auth
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: auth
+spec:
+  replicas: {{ .Values.auth.replicaCount }}
+  selector:
+    matchLabels:
+      app: auth
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: auth
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: auth
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.auth "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.auth.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.auth.service.port }}
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-auth-secret
+                  key: database-url
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-auth-secret
+                optional: true
+          resources:
+            {{- toYaml .Values.auth.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.auth.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.auth.service.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 30

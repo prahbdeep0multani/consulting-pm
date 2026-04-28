@@ -1,0 +1,157 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*.*.*"]
+
+permissions:
+  id-token: write   # OIDC for AWS
+  contents: write   # GitHub Release creation
+
+env:
+  ECR_REGISTRY: ${{ secrets.AWS_ECR_REGISTRY }}
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  # ─── Push Images to ECR ─────────────────────────────────────────────────────
+  push-images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [gateway, auth, projects, timelog, billing, resources, notifications]
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.ECR_REGISTRY }}/consulting-pm/${{ matrix.service }}
+          tags: |
+            type=sha,prefix=,suffix=,format=short
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: services/${{ matrix.service }}/Dockerfile
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+
+  # ─── Deploy to Staging (on push to main) ────────────────────────────────────
+  deploy-staging:
+    needs: push-images
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl + helm
+        uses: azure/setup-helm@v4
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_STAGING }} --region ${{ env.AWS_REGION }}
+
+      - name: Helm upgrade (staging)
+        run: |
+          IMAGE_TAG=$(echo "${{ github.sha }}" | head -c 7)
+          helm upgrade --install consulting-pm ./helm/consulting-pm \
+            --namespace consulting-pm-staging \
+            --create-namespace \
+            --values ./helm/consulting-pm/values-staging.yaml \
+            --set global.imageRegistry=${{ env.ECR_REGISTRY }} \
+            --set gateway.image.tag=$IMAGE_TAG \
+            --set auth.image.tag=$IMAGE_TAG \
+            --set projects.image.tag=$IMAGE_TAG \
+            --set timelog.image.tag=$IMAGE_TAG \
+            --set billing.image.tag=$IMAGE_TAG \
+            --set resources.image.tag=$IMAGE_TAG \
+            --set notifications.image.tag=$IMAGE_TAG \
+            --wait \
+            --timeout 10m
+
+      - name: Smoke tests (staging)
+        run: |
+          GATEWAY_URL="https://${{ secrets.STAGING_HOST }}"
+          curl -sf "$GATEWAY_URL/health" | grep -q '"status":"ok"'
+          curl -sf "$GATEWAY_URL/ready" | grep -q '"status":"ok"'
+
+  # ─── Deploy to Production (on semver tag) ───────────────────────────────────
+  deploy-prod:
+    needs: push-images
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: production   # requires manual approval in GitHub UI
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install kubectl + helm
+        uses: azure/setup-helm@v4
+
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name ${{ secrets.EKS_CLUSTER_PROD }} --region ${{ env.AWS_REGION }}
+
+      - name: Helm upgrade --atomic (prod)
+        run: |
+          IMAGE_TAG="${{ github.ref_name }}"    # e.g. v1.2.3
+          helm upgrade --install consulting-pm ./helm/consulting-pm \
+            --namespace consulting-pm \
+            --create-namespace \
+            --values ./helm/consulting-pm/values-prod.yaml \
+            --set global.imageRegistry=${{ env.ECR_REGISTRY }} \
+            --set gateway.image.tag=$IMAGE_TAG \
+            --set auth.image.tag=$IMAGE_TAG \
+            --set projects.image.tag=$IMAGE_TAG \
+            --set timelog.image.tag=$IMAGE_TAG \
+            --set billing.image.tag=$IMAGE_TAG \
+            --set resources.image.tag=$IMAGE_TAG \
+            --set notifications.image.tag=$IMAGE_TAG \
+            --atomic \
+            --timeout 15m
+
+      - name: Smoke tests (prod)
+        run: |
+          GATEWAY_URL="https://${{ secrets.PROD_HOST }}"
+          curl -sf "$GATEWAY_URL/health" | grep -q '"status":"ok"'
+          curl -sf "$GATEWAY_URL/ready" | grep -q '"status":"ok"'
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          tag_name: ${{ github.ref_name }}

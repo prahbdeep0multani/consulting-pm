@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: projects
+spec:
+  podSelector:
+    matchLabels:
+      app: projects
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: gateway
+      ports:
+        - port: 8002
+  egress:
+    - ports:
+        - port: 5432
+        - port: 6379
+        - port: 9000  # minio
+        - port: 53
+      protocol: UDP
+    - ports:
+        - port: 53
+      protocol: UDP

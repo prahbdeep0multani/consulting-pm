@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-timelog
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: timelog
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - port: {{ .Values.timelog.service.port }}
+      targetPort: {{ .Values.timelog.service.port }}

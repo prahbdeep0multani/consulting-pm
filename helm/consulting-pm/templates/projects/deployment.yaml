@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-projects
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: projects
+spec:
+  replicas: {{ .Values.projects.replicaCount }}
+  selector:
+    matchLabels:
+      app: projects
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: projects
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: projects
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.projects "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.projects.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.projects.service.port }}
+          env:
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+            - name: MINIO_ENDPOINT
+              value: "{{ .Release.Name }}-minio:9000"
+            - name: MINIO_BUCKET_ATTACHMENTS
+              value: "attachments"
+            - name: MINIO_USE_SSL
+              value: "false"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-projects-secret
+                optional: true
+          resources:
+            {{- toYaml .Values.projects.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.projects.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.projects.service.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 30

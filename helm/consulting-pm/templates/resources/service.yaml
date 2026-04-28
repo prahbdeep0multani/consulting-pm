@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-resources
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: resources
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - port: {{ .Values.resources.service.port }}
+      targetPort: {{ .Values.resources.service.port }}

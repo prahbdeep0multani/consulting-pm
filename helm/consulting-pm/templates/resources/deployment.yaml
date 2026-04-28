@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-resources
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: resources
+spec:
+  replicas: {{ .Values.resources.replicaCount }}
+  selector:
+    matchLabels:
+      app: resources
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: resources
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: resources
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.resources "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.resources.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.resources.service.port }}
+          env:
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-resources-secret
+                optional: true
+          resources:
+            {{- toYaml .Values.resources.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.resources.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.resources.service.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 30

@@ -1,0 +1,22 @@
+{{- if .Values.auth.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Release.Name }}-auth
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Release.Name }}-auth
+  minReplicas: {{ .Values.auth.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.auth.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.auth.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}

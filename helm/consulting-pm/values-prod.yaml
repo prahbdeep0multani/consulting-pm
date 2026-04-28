@@ -1,0 +1,51 @@
+gateway:
+  replicaCount: 3
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 15
+
+auth:
+  replicaCount: 3
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 10
+
+projects:
+  replicaCount: 3
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 10
+
+timelog:
+  replicaCount: 3
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 8
+
+billing:
+  replicaCount: 3
+  worker:
+    replicaCount: 2
+  celeryBeat:
+    replicaCount: 1
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 8
+
+resources:
+  replicaCount: 3
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 8
+
+notifications:
+  replicaCount: 3
+  worker:
+    replicaCount: 2
+  autoscaling:
+    minReplicas: 3
+    maxReplicas: 8
+
+ingress:
+  host: api.consulting-pm.example.com
+  tls: true

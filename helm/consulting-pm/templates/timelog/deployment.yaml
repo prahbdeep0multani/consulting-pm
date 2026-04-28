@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-timelog
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: timelog
+spec:
+  replicas: {{ .Values.timelog.replicaCount }}
+  selector:
+    matchLabels:
+      app: timelog
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: timelog
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: timelog
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.timelog "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.timelog.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.timelog.service.port }}
+          env:
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-timelog-secret
+                optional: true
+          resources:
+            {{- toYaml .Values.timelog.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.timelog.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.timelog.service.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 30

@@ -1,0 +1,249 @@
+global:
+  imageRegistry: ""
+  imagePullSecrets: []
+
+# ─── Infrastructure ────────────────────────────────────────────────────────────
+
+postgres-auth:
+  enabled: true
+  auth:
+    username: auth
+    password: auth_pass
+    database: auth_db
+  primary:
+    persistence:
+      size: 20Gi
+
+postgres-projects:
+  enabled: true
+  auth:
+    username: projects
+    password: projects_pass
+    database: projects_db
+  primary:
+    persistence:
+      size: 20Gi
+
+postgres-timelog:
+  enabled: true
+  auth:
+    username: timelog
+    password: timelog_pass
+    database: timelog_db
+  primary:
+    persistence:
+      size: 20Gi
+
+postgres-billing:
+  enabled: true
+  auth:
+    username: billing
+    password: billing_pass
+    database: billing_db
+  primary:
+    persistence:
+      size: 20Gi
+
+postgres-resources:
+  enabled: true
+  auth:
+    username: resources
+    password: resources_pass
+    database: resources_db
+  primary:
+    persistence:
+      size: 10Gi
+
+postgres-notifications:
+  enabled: true
+  auth:
+    username: notifications
+    password: notif_pass
+    database: notifications_db
+  primary:
+    persistence:
+      size: 10Gi
+
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: false
+  master:
+    persistence:
+      size: 10Gi
+
+minio:
+  enabled: true
+  auth:
+    rootUser: minioadmin
+    rootPassword: minioadmin123
+  defaultBuckets: "attachments,invoices"
+  persistence:
+    size: 50Gi
+
+# ─── Application Services ──────────────────────────────────────────────────────
+
+gateway:
+  replicaCount: 2
+  image:
+    repository: consulting-pm/gateway
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+auth:
+  replicaCount: 2
+  image:
+    repository: consulting-pm/auth
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 8001
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+
+projects:
+  replicaCount: 2
+  image:
+    repository: consulting-pm/projects
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 8002
+  resources:
+    requests:
+      cpu: 150m
+      memory: 192Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 70
+
+timelog:
+  replicaCount: 2
+  image:
+    repository: consulting-pm/timelog
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 8003
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+billing:
+  replicaCount: 2
+  image:
+    repository: consulting-pm/billing
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 8004
+  worker:
+    replicaCount: 1
+  celeryBeat:
+    replicaCount: 1
+  resources:
+    requests:
+      cpu: 150m
+      memory: 192Mi
+    limits:
+      cpu: 750m
+      memory: 768Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+resources:
+  replicaCount: 2
+  image:
+    repository: consulting-pm/resources
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 8005
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+notifications:
+  replicaCount: 2
+  image:
+    repository: consulting-pm/notifications
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 8006
+  worker:
+    replicaCount: 1
+  smtp:
+    host: ""
+    port: 587
+    from: noreply@consulting-pm.example.com
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.consulting-pm.example.com
+  tls: true
+  clusterIssuer: letsencrypt-prod

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-auth
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: auth
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - port: {{ .Values.auth.service.port }}
+      targetPort: {{ .Values.auth.service.port }}

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: timelog
+spec:
+  selector:
+    app: timelog
+  ports:
+    - port: 8003
+      targetPort: 8003

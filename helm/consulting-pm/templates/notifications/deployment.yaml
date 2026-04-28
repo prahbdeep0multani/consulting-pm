@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-notifications
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: notifications
+spec:
+  replicas: {{ .Values.notifications.replicaCount }}
+  selector:
+    matchLabels:
+      app: notifications
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: notifications
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: notifications
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.notifications "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.notifications.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.notifications.service.port }}
+          env:
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+            - name: SMTP_HOST
+              value: {{ .Values.notifications.smtp.host | quote }}
+            - name: SMTP_PORT
+              value: {{ .Values.notifications.smtp.port | quote }}
+            - name: SMTP_FROM
+              value: {{ .Values.notifications.smtp.from | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-notifications-secret
+                optional: true
+          resources:
+            {{- toYaml .Values.notifications.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.notifications.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.notifications.service.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-notifications-worker
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: notifications-worker
+spec:
+  replicas: {{ .Values.notifications.worker.replicaCount }}
+  selector:
+    matchLabels:
+      app: notifications-worker
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: notifications-worker
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: notifications-worker
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.notifications "global" .Values.global) }}
+          command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info", "--queues=notifications"]
+          env:
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+            - name: SMTP_HOST
+              value: {{ .Values.notifications.smtp.host | quote }}
+            - name: SMTP_PORT
+              value: {{ .Values.notifications.smtp.port | quote }}
+            - name: SMTP_FROM
+              value: {{ .Values.notifications.smtp.from | quote }}
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-notifications-secret
+                optional: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi

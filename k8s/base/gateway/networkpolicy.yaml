@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: gateway
+spec:
+  podSelector:
+    matchLabels:
+      app: gateway
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - port: 8000
+  egress:
+    - ports:
+        - port: 8001  # auth
+        - port: 8002  # projects
+        - port: 8003  # timelog
+        - port: 8004  # billing
+        - port: 8005  # resources
+        - port: 8006  # notifications
+        - port: 6379  # redis
+        - port: 53    # DNS
+      protocol: UDP
+    - ports:
+        - port: 53
+      protocol: UDP

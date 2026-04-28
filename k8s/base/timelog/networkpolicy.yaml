@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: timelog
+spec:
+  podSelector:
+    matchLabels:
+      app: timelog
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: gateway
+        - podSelector:
+            matchLabels:
+              app: billing
+      ports:
+        - port: 8003
+  egress:
+    - ports:
+        - port: 5432
+        - port: 6379
+        - port: 53
+      protocol: UDP
+    - ports:
+        - port: 53
+      protocol: UDP

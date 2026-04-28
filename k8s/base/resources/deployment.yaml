@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resources
+  labels:
+    app: resources
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: resources
+  template:
+    metadata:
+      labels:
+        app: resources
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: resources
+          image: consulting-pm/resources:latest
+          ports:
+            - containerPort: 8005
+          envFrom:
+            - configMapRef:
+                name: resources-config
+            - secretRef:
+                name: resources-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8005
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8005
+            initialDelaySeconds: 20
+            periodSeconds: 30

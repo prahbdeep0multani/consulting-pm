@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-billing
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: billing
+spec:
+  replicas: {{ .Values.billing.replicaCount }}
+  selector:
+    matchLabels:
+      app: billing
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: billing
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: billing
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.billing "global" .Values.global) }}
+          imagePullPolicy: {{ .Values.billing.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.billing.service.port }}
+          env:
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+            - name: MINIO_ENDPOINT
+              value: "{{ .Release.Name }}-minio:9000"
+            - name: MINIO_BUCKET_INVOICES
+              value: "invoices"
+            - name: MINIO_USE_SSL
+              value: "false"
+            - name: TIMELOG_SERVICE_URL
+              value: "http://{{ .Release.Name }}-timelog:8003"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-billing-secret
+                optional: true
+          resources:
+            {{- toYaml .Values.billing.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: {{ .Values.billing.service.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: {{ .Values.billing.service.port }}
+            initialDelaySeconds: 20
+            periodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-billing-worker
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: billing-worker
+spec:
+  replicas: {{ .Values.billing.worker.replicaCount }}
+  selector:
+    matchLabels:
+      app: billing-worker
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: billing-worker
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: billing-worker
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.billing "global" .Values.global) }}
+          command: ["celery", "-A", "app.tasks.celery_app", "worker", "--loglevel=info", "--queues=billing"]
+          env:
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-billing-secret
+                optional: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-celery-beat
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+    app: celery-beat
+spec:
+  replicas: {{ .Values.billing.celeryBeat.replicaCount }}
+  selector:
+    matchLabels:
+      app: celery-beat
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: celery-beat
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: celery-beat
+          image: {{ include "consulting-pm.image" (dict "cfg" .Values.billing "global" .Values.global) }}
+          command: ["celery", "-A", "app.tasks.celery_app", "beat", "--loglevel=info"]
+          env:
+            - name: REDIS_URL
+              value: "redis://{{ .Release.Name }}-redis-master:6379/0"
+          envFrom:
+            - secretRef:
+                name: {{ .Release.Name }}-billing-secret
+                optional: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi

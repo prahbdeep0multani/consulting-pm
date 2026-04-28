@@ -1,0 +1,81 @@
+gateway:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+auth:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+projects:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+timelog:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+billing:
+  replicaCount: 1
+  worker:
+    replicaCount: 1
+  autoscaling:
+    enabled: false
+
+resources:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+notifications:
+  replicaCount: 1
+  worker:
+    replicaCount: 1
+  autoscaling:
+    enabled: false
+
+ingress:
+  host: api.consulting-pm.dev.example.com
+  tls: false
+
+redis:
+  master:
+    persistence:
+      size: 2Gi
+
+postgres-auth:
+  primary:
+    persistence:
+      size: 5Gi
+
+postgres-projects:
+  primary:
+    persistence:
+      size: 5Gi
+
+postgres-timelog:
+  primary:
+    persistence:
+      size: 5Gi
+
+postgres-billing:
+  primary:
+    persistence:
+      size: 5Gi
+
+postgres-resources:
+  primary:
+    persistence:
+      size: 5Gi
+
+postgres-notifications:
+  primary:
+    persistence:
+      size: 5Gi
+
+minio:
+  persistence:
+    size: 10Gi

@@ -1,0 +1,37 @@
+gateway:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 5
+
+auth:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 4
+
+projects:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 4
+
+timelog:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 4
+
+billing:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 4
+
+resources:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 4
+
+notifications:
+  replicaCount: 2
+  autoscaling:
+    maxReplicas: 4
+
+ingress:
+  host: api.consulting-pm.staging.example.com

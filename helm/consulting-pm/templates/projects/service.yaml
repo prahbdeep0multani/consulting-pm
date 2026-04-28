@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-projects
+  labels:
+    {{- include "consulting-pm.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: projects
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - port: {{ .Values.projects.service.port }}
+      targetPort: {{ .Values.projects.service.port }}
