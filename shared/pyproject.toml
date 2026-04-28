@@ -25,3 +25,17 @@ dev = [
     "httpx>=0.27.0",
     "anyio[trio]>=4.0.0",
 ]
+
+# Hatchling cannot auto-discover the package because the project name
+# (consulting-pm-shared) doesn't match the directory name (shared).
+# We explicitly list what to include and remap paths so the wheel installs
+# files under shared/ (making `from shared.core...` imports work).
+[tool.hatch.build.targets.wheel]
+include = [
+    "__init__.py",
+    "core/**",
+    "events/**",
+]
+
+[tool.hatch.build.targets.wheel.sources]
+"" = "shared/"

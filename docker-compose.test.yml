@@ -138,7 +138,7 @@ services:
     working_dir: /workspace
     command: >
       bash -c "
-        pip install -q -e shared/ &&
+        pip install -q shared/ &&
         pip install -q -e services/auth/ &&
         pip install -q -e services/projects/ &&
         pip install -q -e services/timelog/ &&

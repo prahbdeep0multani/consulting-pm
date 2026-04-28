@@ -75,7 +75,7 @@ jobs:
 
       - name: Install shared + service
         run: |
-          pip install -e shared/
+          pip install shared/
           if [ "${{ matrix.service }}" != "shared" ]; then
             pip install -e services/${{ matrix.service }}/
           fi
@@ -186,7 +186,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e shared/
+          pip install shared/
           pip install -e services/${{ matrix.service }}/
           pip install pytest pytest-asyncio pytest-cov httpx
 
