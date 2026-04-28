@@ -1,14 +1,12 @@
-import asyncio
 import uuid
 from collections.abc import AsyncGenerator
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
 from shared.core.models.base import Base
 from shared.core.security.jwt import JWTHandler
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 TEST_DB_URL = "postgresql+asyncpg://auth:auth_pass@localhost:5432/auth_test_db"
 TEST_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
@@ -26,6 +24,7 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Z3VS5JJcds3xHn/ygWe
 def jwt_handler() -> JWTHandler:
     # Use a simple HS256 handler for tests (override to RS256 in real CI)
     import os
+
     private_key = os.environ.get("TEST_JWT_PRIVATE_KEY", TEST_PRIVATE_KEY)
     public_key = os.environ.get("TEST_JWT_PUBLIC_KEY", TEST_PUBLIC_KEY)
     return JWTHandler(private_key=private_key, public_key=public_key)
@@ -52,11 +51,13 @@ async def session(engine) -> AsyncGenerator[AsyncSession, None]:
 
 @pytest_asyncio.fixture()
 async def client(session, jwt_handler) -> AsyncGenerator[AsyncClient, None]:
-    from app.main import app
     import app.main as main_module
+    from app.main import app
+
     main_module.jwt_handler = jwt_handler
 
     from app.database import get_session
+
     app.dependency_overrides[get_session] = lambda: session
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:

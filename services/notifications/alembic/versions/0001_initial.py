@@ -4,14 +4,18 @@ Revision ID: 0001
 Revises:
 Create Date: 2024-01-01 00:00:00.000000
 """
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision = "0001"
 down_revision = None
 branch_labels = None
 depends_on = None
+
+_NOW = sa.text("now()")
+_UUID_DEFAULT = sa.text("gen_random_uuid()")
 
 
 def upgrade() -> None:
@@ -30,7 +34,7 @@ def upgrade() -> None:
         sa.Column("sent_at", sa.DateTime(timezone=True)),
         sa.Column("failed_at", sa.DateTime(timezone=True)),
         sa.Column("error_message", sa.Text),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=_NOW),
     )
     op.create_index(
         "ix_notifications_tenant_user_read",
@@ -49,10 +53,12 @@ def upgrade() -> None:
         sa.Column("quiet_hours_start", sa.Time),
         sa.Column("quiet_hours_end", sa.Time),
         sa.Column("timezone", sa.String(50), nullable=False, server_default="UTC"),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=_NOW),
         sa.UniqueConstraint("tenant_id", "user_id", name="uq_notif_prefs_user"),
     )
-    op.create_index("ix_notif_prefs_tenant_user", "notification_preferences", ["tenant_id", "user_id"])
+    op.create_index(
+        "ix_notif_prefs_tenant_user", "notification_preferences", ["tenant_id", "user_id"]
+    )
 
 
 def downgrade() -> None:

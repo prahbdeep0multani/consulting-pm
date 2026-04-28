@@ -1,8 +1,7 @@
 import uuid
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.core.exceptions import ConflictError, NotFoundError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..repositories.user_repo import RoleRepository, UserRepository
 from ..security.password import hash_password
@@ -59,7 +58,9 @@ class UserService:
         await self._user_repo.soft_delete(user)
         await self._session.commit()
 
-    async def assign_role(self, user_id: uuid.UUID, role_id: uuid.UUID, assigned_by: uuid.UUID) -> None:
+    async def assign_role(
+        self, user_id: uuid.UUID, role_id: uuid.UUID, assigned_by: uuid.UUID
+    ) -> None:
         user = await self._user_repo.get_by_id(user_id)
         if not user:
             raise NotFoundError("User not found")

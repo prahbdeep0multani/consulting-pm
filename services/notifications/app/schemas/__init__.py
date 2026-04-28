@@ -1,3 +1,7 @@
-from .notification import NotificationPreferenceResponse, NotificationPreferenceUpdate, NotificationResponse
+from .notification import (
+    NotificationPreferenceResponse,
+    NotificationPreferenceUpdate,
+    NotificationResponse,
+)
 
-__all__ = ["NotificationResponse", "NotificationPreferenceResponse", "NotificationPreferenceUpdate"]
+__all__ = ["NotificationPreferenceResponse", "NotificationPreferenceUpdate", "NotificationResponse"]

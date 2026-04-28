@@ -1,5 +1,5 @@
 import base64
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ class CursorParams(BaseModel):
     cursor: str | None = None
 
 
-class CursorPage(BaseModel, Generic[T]):
+class CursorPage[T](BaseModel):
     items: list[T]
     next_cursor: str | None = None
     has_more: bool

@@ -1,17 +1,18 @@
 import uuid
 from datetime import datetime, time
 
+from shared.core.models.base import Base, PrimaryKeyMixin, TenantMixin
 from sqlalchemy import JSON, Boolean, DateTime, String, Text, Time, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
-
-from shared.core.models.base import Base, PrimaryKeyMixin, TenantMixin
 
 
 class Notification(Base, PrimaryKeyMixin, TenantMixin):
     __tablename__ = "notifications"
 
-    recipient_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
+    recipient_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False, index=True
+    )
     type: Mapped[str] = mapped_column(String(80), nullable=False)  # e.g. "task.assigned"
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
@@ -22,7 +23,9 @@ class Notification(Base, PrimaryKeyMixin, TenantMixin):
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     failed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     error_message: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default="now()")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )
 
 
 class NotificationPreference(Base, PrimaryKeyMixin, TenantMixin):
@@ -36,4 +39,6 @@ class NotificationPreference(Base, PrimaryKeyMixin, TenantMixin):
     quiet_hours_start: Mapped[time | None] = mapped_column(Time)
     quiet_hours_end: Mapped[time | None] = mapped_column(Time)
     timezone: Mapped[str] = mapped_column(String(50), nullable=False, default="UTC")
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default="now()")
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )

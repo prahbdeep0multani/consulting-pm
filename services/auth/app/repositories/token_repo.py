@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,12 +41,12 @@ class RefreshTokenRepository:
         return result.scalar_one_or_none()
 
     async def revoke(self, token: RefreshToken) -> None:
-        token.revoked_at = datetime.now(timezone.utc)
+        token.revoked_at = datetime.now(UTC)
         await self._session.flush()
 
     async def revoke_family(self, family: uuid.UUID) -> None:
         """Revoke all tokens in a rotation family (reuse detection)."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         await self._session.execute(
             update(RefreshToken)
             .where(RefreshToken.family == family, RefreshToken.revoked_at.is_(None))
@@ -54,7 +54,7 @@ class RefreshTokenRepository:
         )
 
     async def revoke_all_for_user(self, user_id: uuid.UUID) -> None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         await self._session.execute(
             update(RefreshToken)
             .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
@@ -66,7 +66,9 @@ class PasswordResetTokenRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def create(self, user_id: uuid.UUID, token_hash: str, expires_at: datetime) -> PasswordResetToken:
+    async def create(
+        self, user_id: uuid.UUID, token_hash: str, expires_at: datetime
+    ) -> PasswordResetToken:
         token = PasswordResetToken(user_id=user_id, token_hash=token_hash, expires_at=expires_at)
         self._session.add(token)
         await self._session.flush()
@@ -77,11 +79,11 @@ class PasswordResetTokenRepository:
             select(PasswordResetToken).where(
                 PasswordResetToken.token_hash == token_hash,
                 PasswordResetToken.used_at.is_(None),
-                PasswordResetToken.expires_at > datetime.now(timezone.utc),
+                PasswordResetToken.expires_at > datetime.now(UTC),
             )
         )
         return result.scalar_one_or_none()
 
     async def mark_used(self, token: PasswordResetToken) -> None:
-        token.used_at = datetime.now(timezone.utc)
+        token.used_at = datetime.now(UTC)
         await self._session.flush()

@@ -1,10 +1,8 @@
 import uuid
-from typing import Annotated
 
 from fastapi import Request
-
 from shared.core.exceptions import AuthenticationError
-from shared.core.models.base import get_current_tenant_id, set_tenant_id
+from shared.core.models.base import set_tenant_id
 
 
 def get_current_user_id(request: Request) -> uuid.UUID:

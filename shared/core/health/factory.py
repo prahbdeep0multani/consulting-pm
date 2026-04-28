@@ -20,7 +20,7 @@ def create_health_router(
         checks: dict[str, str] = {}
         all_ok = True
 
-        for name, check_fn in (readiness_checks or []):
+        for name, check_fn in readiness_checks or []:
             try:
                 ok = await check_fn()
                 checks[name] = "ok" if ok else "degraded"

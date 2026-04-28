@@ -1,10 +1,8 @@
 import uuid
-from datetime import datetime
-
-from sqlalchemy import JSON, Boolean, DateTime, Integer, String, func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from shared.core.models.base import Base, PrimaryKeyMixin, SoftDeleteMixin, TimestampMixin
+from sqlalchemy import JSON, Boolean, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class Tenant(Base, PrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):

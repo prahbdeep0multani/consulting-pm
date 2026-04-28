@@ -1,11 +1,10 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.core.exceptions import NotFoundError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session
 from ..dependencies import get_current_tenant_id_dep, get_current_user_id
@@ -67,7 +66,7 @@ async def update_task(
         raise NotFoundError("Task not found")
     updates = body.model_dump(exclude_none=True)
     if updates.get("status") == "done" and task.status != "done":
-        updates["completed_at"] = datetime.now(timezone.utc)
+        updates["completed_at"] = datetime.now(UTC)
     updated = await repo.update(task, **updates)
     await session.commit()
     return updated
@@ -102,6 +101,7 @@ async def list_subtasks(
 
 
 # ── Comments ─────────────────────────────────────────────────────────────────
+
 
 @router.get("/tasks/{task_id}/comments", response_model=list[CommentResponse])
 async def list_comments(

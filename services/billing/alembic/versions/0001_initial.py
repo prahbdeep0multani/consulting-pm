@@ -4,14 +4,18 @@ Revision ID: 0001
 Revises:
 Create Date: 2024-01-01 00:00:00.000000
 """
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision = "0001"
 down_revision = None
 branch_labels = None
 depends_on = None
+
+_NOW = sa.text("now()")
+_UUID_DEFAULT = sa.text("gen_random_uuid()")
 
 
 def upgrade() -> None:
@@ -27,8 +31,8 @@ def upgrade() -> None:
         sa.Column("effective_from", sa.Date, nullable=False),
         sa.Column("effective_to", sa.Date),
         sa.Column("is_active", sa.Boolean, nullable=False, server_default="true"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=_NOW),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=_NOW),
     )
     op.create_index(
         "ix_billing_rates_resolve",
@@ -59,8 +63,8 @@ def upgrade() -> None:
         sa.Column("paid_at", sa.DateTime(timezone=True)),
         sa.Column("paid_amount", sa.Numeric(14, 2)),
         sa.Column("external_ref", sa.String(255)),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=_NOW),
+        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=_NOW),
         sa.Column("deleted_at", sa.DateTime(timezone=True)),
         sa.UniqueConstraint("tenant_id", "invoice_number", name="uq_invoice_number"),
     )

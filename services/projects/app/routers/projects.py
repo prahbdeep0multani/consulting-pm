@@ -2,13 +2,12 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.core.exceptions import NotFoundError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session
 from ..dependencies import get_current_tenant_id_dep, get_current_user_id
-from ..repositories.project_repo import MilestoneRepository, ProjectRepository, TaskRepository
+from ..repositories.project_repo import MilestoneRepository, ProjectRepository
 from ..schemas.project import (
     MilestoneCreate,
     MilestoneResponse,
@@ -91,6 +90,7 @@ async def delete_project(
 
 
 # ── Milestones ───────────────────────────────────────────────────────────────
+
 
 @router.get("/projects/{project_id}/milestones", response_model=list[MilestoneResponse])
 async def list_milestones(

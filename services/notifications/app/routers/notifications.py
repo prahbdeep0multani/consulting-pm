@@ -1,7 +1,8 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from shared.core.models.base import get_current_tenant_id
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +10,6 @@ from ..database import get_session
 from ..dependencies import get_current_tenant_id_dep, get_current_user_id
 from ..models.notification import Notification
 from ..schemas.notification import NotificationResponse
-from shared.core.models.base import get_current_tenant_id
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
 
@@ -95,7 +95,7 @@ async def mark_read(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Notification not found")
     if not n.is_read:
         n.is_read = True
-        n.read_at = datetime.now(timezone.utc)
+        n.read_at = datetime.now(UTC)
         await session.commit()
         await session.refresh(n)
     return NotificationResponse.model_validate(n)
@@ -108,7 +108,7 @@ async def mark_all_read(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, str]:
     tenant_id = get_current_tenant_id()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     await session.execute(
         update(Notification)
         .where(

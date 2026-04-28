@@ -1,8 +1,7 @@
 import uuid
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.core.exceptions import ConflictError, NotFoundError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..models.tenant import Tenant
 from ..repositories.tenant_repo import TenantRepository
@@ -12,16 +11,30 @@ from ..security.password import hash_password
 _SYSTEM_ROLES = {
     "tenant_admin": ["*:*"],
     "project_manager": [
-        "project:read", "project:write", "task:read", "task:write",
-        "timelog:read", "timelog:approve", "resource:read", "resource:write",
-        "billing:read", "client:read", "client:write",
+        "project:read",
+        "project:write",
+        "task:read",
+        "task:write",
+        "timelog:read",
+        "timelog:approve",
+        "resource:read",
+        "resource:write",
+        "billing:read",
+        "client:read",
+        "client:write",
     ],
     "consultant": [
-        "project:read", "task:read", "task:write",
-        "timelog:read", "timelog:write", "resource:read",
+        "project:read",
+        "task:read",
+        "task:write",
+        "timelog:read",
+        "timelog:write",
+        "resource:read",
     ],
     "client_viewer": [
-        "project:read", "milestone:read", "task:read",
+        "project:read",
+        "milestone:read",
+        "task:read",
     ],
 }
 

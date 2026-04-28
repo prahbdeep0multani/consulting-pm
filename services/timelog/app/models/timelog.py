@@ -2,11 +2,16 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
+from shared.core.models.base import (
+    Base,
+    PrimaryKeyMixin,
+    SoftDeleteMixin,
+    TenantMixin,
+    TimestampMixin,
+)
 from sqlalchemy import NUMERIC, Boolean, Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from shared.core.models.base import Base, PrimaryKeyMixin, SoftDeleteMixin, TenantMixin, TimestampMixin
 
 
 class TimeEntry(Base, PrimaryKeyMixin, TenantMixin, TimestampMixin, SoftDeleteMixin):
@@ -32,8 +37,12 @@ class TimeEntry(Base, PrimaryKeyMixin, TenantMixin, TimestampMixin, SoftDeleteMi
 class TimeEntryApproval(Base, PrimaryKeyMixin, TenantMixin):
     __tablename__ = "time_entry_approvals"
 
-    time_entry_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("time_entries.id"), nullable=False, index=True)
+    time_entry_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("time_entries.id"), nullable=False, index=True
+    )
     approver_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     action: Mapped[str] = mapped_column(String(20), nullable=False)  # submitted|approved|rejected
     notes: Mapped[str | None] = mapped_column(Text)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default="now()")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default="now()"
+    )

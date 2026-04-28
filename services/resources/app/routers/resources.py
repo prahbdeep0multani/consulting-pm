@@ -1,12 +1,12 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import and_, or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.core.exceptions import AuthorizationError, ConflictError, NotFoundError
+from shared.core.models.base import get_current_tenant_id
+from sqlalchemy import or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session
 from ..dependencies import get_current_tenant_id_dep, get_current_user_id, get_user_roles
@@ -19,7 +19,6 @@ from ..schemas.resource import (
     LeaveRequestResponse,
     RejectLeaveRequest,
 )
-from shared.core.models.base import get_current_tenant_id
 
 router = APIRouter(tags=["resources"])
 
@@ -58,7 +57,9 @@ async def list_allocations(
     user_id_filter: uuid.UUID | None = None,
     project_id: uuid.UUID | None = None,
 ) -> list:
-    q = select(Allocation).where(Allocation.tenant_id == get_current_tenant_id(), Allocation.deleted_at.is_(None))
+    q = select(Allocation).where(
+        Allocation.tenant_id == get_current_tenant_id(), Allocation.deleted_at.is_(None)
+    )
     if user_id_filter:
         q = q.where(Allocation.user_id == user_id_filter)
     if project_id:
@@ -77,8 +78,12 @@ async def create_allocation(
 ) -> object:
     if not roles.intersection({"tenant_admin", "project_manager"}):
         raise AuthorizationError("Manager or admin role required")
-    await _check_over_allocation(session, body.user_id, body.start_date, body.end_date, body.allocation_pct)
-    alloc = Allocation(tenant_id=get_current_tenant_id(), created_by=created_by, **body.model_dump())
+    await _check_over_allocation(
+        session, body.user_id, body.start_date, body.end_date, body.allocation_pct
+    )
+    alloc = Allocation(
+        tenant_id=get_current_tenant_id(), created_by=created_by, **body.model_dump()
+    )
     session.add(alloc)
     await session.commit()
     return alloc
@@ -91,7 +96,11 @@ async def get_allocation(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
 ) -> object:
     result = await session.execute(
-        select(Allocation).where(Allocation.id == alloc_id, Allocation.tenant_id == get_current_tenant_id(), Allocation.deleted_at.is_(None))
+        select(Allocation).where(
+            Allocation.id == alloc_id,
+            Allocation.tenant_id == get_current_tenant_id(),
+            Allocation.deleted_at.is_(None),
+        )
     )
     alloc = result.scalar_one_or_none()
     if not alloc:
@@ -110,13 +119,24 @@ async def update_allocation(
     if not roles.intersection({"tenant_admin", "project_manager"}):
         raise AuthorizationError("Manager or admin role required")
     result = await session.execute(
-        select(Allocation).where(Allocation.id == alloc_id, Allocation.tenant_id == get_current_tenant_id(), Allocation.deleted_at.is_(None))
+        select(Allocation).where(
+            Allocation.id == alloc_id,
+            Allocation.tenant_id == get_current_tenant_id(),
+            Allocation.deleted_at.is_(None),
+        )
     )
     alloc = result.scalar_one_or_none()
     if not alloc:
         raise NotFoundError("Allocation not found")
     if body.allocation_pct is not None:
-        await _check_over_allocation(session, alloc.user_id, alloc.start_date, body.end_date or alloc.end_date, body.allocation_pct, exclude_id=alloc_id)
+        await _check_over_allocation(
+            session,
+            alloc.user_id,
+            alloc.start_date,
+            body.end_date or alloc.end_date,
+            body.allocation_pct,
+            exclude_id=alloc_id,
+        )
     for k, v in body.model_dump(exclude_none=True).items():
         setattr(alloc, k, v)
     await session.commit()
@@ -133,16 +153,21 @@ async def delete_allocation(
     if not roles.intersection({"tenant_admin", "project_manager"}):
         raise AuthorizationError("Manager or admin role required")
     result = await session.execute(
-        select(Allocation).where(Allocation.id == alloc_id, Allocation.tenant_id == get_current_tenant_id(), Allocation.deleted_at.is_(None))
+        select(Allocation).where(
+            Allocation.id == alloc_id,
+            Allocation.tenant_id == get_current_tenant_id(),
+            Allocation.deleted_at.is_(None),
+        )
     )
     alloc = result.scalar_one_or_none()
     if not alloc:
         raise NotFoundError("Allocation not found")
-    alloc.deleted_at = datetime.now(timezone.utc)
+    alloc.deleted_at = datetime.now(UTC)
     await session.commit()
 
 
 # ── Leave Requests ────────────────────────────────────────────────────────────
+
 
 @router.get("/leave-requests", response_model=list[LeaveRequestResponse])
 async def list_leave_requests(
@@ -182,14 +207,16 @@ async def approve_leave(
     if not roles.intersection({"tenant_admin", "project_manager"}):
         raise AuthorizationError("Manager or admin role required")
     result = await session.execute(
-        select(LeaveRequest).where(LeaveRequest.id == leave_id, LeaveRequest.tenant_id == get_current_tenant_id())
+        select(LeaveRequest).where(
+            LeaveRequest.id == leave_id, LeaveRequest.tenant_id == get_current_tenant_id()
+        )
     )
     leave = result.scalar_one_or_none()
     if not leave:
         raise NotFoundError("Leave request not found")
     leave.status = "approved"
     leave.approver_user_id = user_id
-    leave.approved_at = datetime.now(timezone.utc)
+    leave.approved_at = datetime.now(UTC)
     await session.commit()
     return leave
 
@@ -206,7 +233,9 @@ async def reject_leave(
     if not roles.intersection({"tenant_admin", "project_manager"}):
         raise AuthorizationError("Manager or admin role required")
     result = await session.execute(
-        select(LeaveRequest).where(LeaveRequest.id == leave_id, LeaveRequest.tenant_id == get_current_tenant_id())
+        select(LeaveRequest).where(
+            LeaveRequest.id == leave_id, LeaveRequest.tenant_id == get_current_tenant_id()
+        )
     )
     leave = result.scalar_one_or_none()
     if not leave:

@@ -1,7 +1,7 @@
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from jose import JWTError, jwt
@@ -27,7 +27,7 @@ class TokenClaims(BaseModel):
 class TokenPair(BaseModel):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105
     expires_in: int
 
 
@@ -51,7 +51,7 @@ class JWTHandler:
         roles: list[str],
         permissions: list[str],
     ) -> str:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload: dict[str, Any] = {
             "sub": str(user_id),
             "tenant_id": str(tenant_id),
@@ -71,7 +71,7 @@ class JWTHandler:
         family: uuid.UUID | None = None,
     ) -> tuple[str, str]:
         """Returns (raw_token, token_hash). Store only the hash."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         raw = secrets.token_urlsafe(64)
         token_family = str(family) if family else str(uuid.uuid4())
         payload: dict[str, Any] = {

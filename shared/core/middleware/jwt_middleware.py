@@ -21,7 +21,9 @@ _AUTH_PUBLIC_PREFIXES = (
 class JWTAuthMiddleware(BaseHTTPMiddleware):
     """Validates RS256 JWT access tokens and injects user context headers."""
 
-    def __init__(self, app: object, jwt_handler: JWTHandler, public_prefixes: tuple[str, ...] = ()) -> None:
+    def __init__(
+        self, app: object, jwt_handler: JWTHandler, public_prefixes: tuple[str, ...] = ()
+    ) -> None:
         super().__init__(app)  # type: ignore[arg-type]
         self._jwt = jwt_handler
         self._public_prefixes = _AUTH_PUBLIC_PREFIXES + public_prefixes
@@ -36,7 +38,10 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         if not auth_header.startswith("Bearer "):
             return JSONResponse(
                 status_code=401,
-                content={"error": "authentication_error", "message": "Missing or malformed Authorization header"},
+                content={
+                    "error": "authentication_error",
+                    "message": "Missing or malformed Authorization header",
+                },
             )
 
         token = auth_header.removeprefix("Bearer ")

@@ -2,12 +2,11 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from shared.core.exceptions import NotFoundError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.core.exceptions import NotFoundError
-
 from ..database import get_session
-from ..dependencies import get_current_user_id, get_current_tenant_id_dep
+from ..dependencies import get_current_tenant_id_dep
 from ..repositories.project_repo import ClientRepository
 from ..schemas.project import ClientCreate, ClientResponse, ClientUpdate
 

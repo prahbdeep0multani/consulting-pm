@@ -20,3 +20,6 @@ dependencies = [
     "jinja2>=3.1.0",
     "structlog>=24.0.0",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

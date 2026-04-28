@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 _engine = None
@@ -23,6 +24,7 @@ async def check_db() -> bool:
         return False
     try:
         import sqlalchemy
+
         async with _engine.connect() as conn:
             await conn.execute(sqlalchemy.text("SELECT 1"))
         return True

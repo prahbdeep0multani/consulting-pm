@@ -3,7 +3,6 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from pydantic import Field
-
 from shared.core.schemas.base import BaseSchema, TimestampSchema
 
 

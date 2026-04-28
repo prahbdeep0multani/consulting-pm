@@ -1,8 +1,7 @@
 import uuid
 from datetime import datetime
 
-from pydantic import Field, field_validator
-
+from pydantic import Field
 from shared.core.schemas.base import BaseSchema
 
 

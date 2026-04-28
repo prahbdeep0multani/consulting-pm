@@ -39,13 +39,13 @@ class EventConsumer:
         for stream in self._streams:
             try:
                 await self._redis.xgroup_create(stream, self._service, id="0", mkstream=True)
-            except Exception:
-                pass  # group already exists
+            except Exception as e:
+                logger.debug("Stream consumer group already exists for %s: %s", stream, e)
 
     async def start(self) -> None:
         await self._ensure_groups()
         self._running = True
-        stream_ids = {s: ">" for s in self._streams}
+        stream_ids = dict.fromkeys(self._streams, ">")
         while self._running:
             try:
                 results = await self._redis.xreadgroup(
@@ -88,8 +88,8 @@ class EventConsumer:
                     "0-0",
                     count=self._batch_size,
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed to reclaim stale messages from %s: %s", stream, e)
 
     def stop(self) -> None:
         self._running = False

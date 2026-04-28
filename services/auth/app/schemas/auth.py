@@ -1,5 +1,4 @@
 from pydantic import EmailStr, Field
-
 from shared.core.schemas.base import BaseSchema
 
 
@@ -12,7 +11,7 @@ class LoginRequest(BaseSchema):
 class LoginResponse(BaseSchema):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105
     expires_in: int
 
 
@@ -24,7 +23,7 @@ class RefreshRequest(BaseSchema):
 class RefreshResponse(BaseSchema):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105
     expires_in: int
 
 

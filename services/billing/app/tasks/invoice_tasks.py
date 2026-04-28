@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import date, datetime, timezone
+from datetime import date
 
 from sqlalchemy import select
 
@@ -15,7 +15,8 @@ def check_overdue_invoices() -> None:
 
 
 async def _check_overdue() -> None:
-    from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
     from ..config import settings
     from ..models.billing import Invoice
 

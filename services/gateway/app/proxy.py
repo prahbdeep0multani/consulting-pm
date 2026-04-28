@@ -3,8 +3,14 @@ from fastapi import Request
 from fastapi.responses import Response
 
 _HOP_BY_HOP = {
-    "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
-    "te", "trailers", "transfer-encoding", "upgrade",
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailers",
+    "transfer-encoding",
+    "upgrade",
 }
 
 
@@ -17,10 +23,7 @@ async def proxy_request(
     query = request.url.query
     target = f"{upstream_url}{path}" + (f"?{query}" if query else "")
 
-    headers = {
-        k: v for k, v in request.headers.items()
-        if k.lower() not in _HOP_BY_HOP
-    }
+    headers = {k: v for k, v in request.headers.items() if k.lower() not in _HOP_BY_HOP}
 
     # Inject user context from gateway's JWT validation
     if hasattr(request.state, "user_id"):
@@ -42,8 +45,7 @@ async def proxy_request(
     )
 
     response_headers = {
-        k: v for k, v in upstream_resp.headers.items()
-        if k.lower() not in _HOP_BY_HOP
+        k: v for k, v in upstream_resp.headers.items() if k.lower() not in _HOP_BY_HOP
     }
     response_headers["X-Correlation-ID"] = headers.get("X-Correlation-ID", "")
 

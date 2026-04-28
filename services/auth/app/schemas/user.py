@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime
 
 from pydantic import EmailStr, Field
-
 from shared.core.schemas.base import BaseSchema
 
 

@@ -4,8 +4,9 @@ Revision ID: 0001
 Revises:
 Create Date: 2024-01-01 00:00:00.000000
 """
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision = "0001"
@@ -32,12 +33,26 @@ def upgrade() -> None:
         sa.Column("billing_rate_id", postgresql.UUID(as_uuid=True)),
         sa.Column("billed_amount", sa.Numeric(10, 2)),
         sa.Column("invoice_id", postgresql.UUID(as_uuid=True)),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True)),
     )
-    op.create_index("ix_time_entries_tenant_user_date", "time_entries", ["tenant_id", "user_id", "date"])
-    op.create_index("ix_time_entries_tenant_project_date", "time_entries", ["tenant_id", "project_id", "date"])
+    op.create_index(
+        "ix_time_entries_tenant_user_date", "time_entries", ["tenant_id", "user_id", "date"]
+    )
+    op.create_index(
+        "ix_time_entries_tenant_project_date", "time_entries", ["tenant_id", "project_id", "date"]
+    )
     op.create_index("ix_time_entries_tenant_status", "time_entries", ["tenant_id", "status"])
 
     op.create_table(
@@ -48,7 +63,12 @@ def upgrade() -> None:
         sa.Column("approver_user_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("action", sa.String(20), nullable=False),
         sa.Column("notes", sa.Text),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.ForeignKeyConstraint(["time_entry_id"], ["time_entries.id"], ondelete="CASCADE"),
     )
     op.create_index("ix_approvals_time_entry", "time_entry_approvals", ["time_entry_id"])

@@ -1,17 +1,16 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from shared.core.exceptions import AuthorizationError, NotFoundError, UnprocessableError
+from shared.core.models.base import get_current_tenant_id
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from shared.core.exceptions import AuthorizationError, NotFoundError, UnprocessableError
-from shared.core.models.base import get_current_tenant_id
-
 from ..database import get_session
-from ..dependencies import get_current_tenant_id_dep, get_current_user_id, get_user_roles
+from ..dependencies import get_current_tenant_id_dep, get_user_roles
 from ..models.billing import BillingRate, Invoice, InvoiceLineItem
 from ..schemas.billing import (
     BillingRateCreate,
@@ -45,13 +44,16 @@ def _recalculate_totals(invoice: Invoice) -> None:
 
 # ── Billing Rates ─────────────────────────────────────────────────────────────
 
+
 @router.get("/billing-rates", response_model=list[BillingRateResponse])
 async def list_rates(
     session: Annotated[AsyncSession, Depends(get_session)],
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
 ) -> list:
     result = await session.execute(
-        select(BillingRate).where(BillingRate.tenant_id == get_current_tenant_id(), BillingRate.is_active == True)
+        select(BillingRate).where(
+            BillingRate.tenant_id == get_current_tenant_id(), BillingRate.is_active
+        )
     )
     return list(result.scalars().all())
 
@@ -73,6 +75,7 @@ async def create_rate(
 
 # ── Invoices ─────────────────────────────────────────────────────────────────
 
+
 @router.get("/invoices", response_model=list[InvoiceResponse])
 async def list_invoices(
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -80,7 +83,9 @@ async def list_invoices(
     status: str | None = None,
     client_id: uuid.UUID | None = None,
 ) -> list:
-    q = select(Invoice).where(Invoice.tenant_id == get_current_tenant_id(), Invoice.deleted_at.is_(None))
+    q = select(Invoice).where(
+        Invoice.tenant_id == get_current_tenant_id(), Invoice.deleted_at.is_(None)
+    )
     if status:
         q = q.where(Invoice.status == status)
     if client_id:
@@ -115,7 +120,11 @@ async def get_invoice(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
 ) -> object:
     result = await session.execute(
-        select(Invoice).where(Invoice.id == inv_id, Invoice.tenant_id == get_current_tenant_id(), Invoice.deleted_at.is_(None))
+        select(Invoice).where(
+            Invoice.id == inv_id,
+            Invoice.tenant_id == get_current_tenant_id(),
+            Invoice.deleted_at.is_(None),
+        )
     )
     inv = result.scalar_one_or_none()
     if not inv:
@@ -123,7 +132,11 @@ async def get_invoice(
     return inv
 
 
-@router.post("/invoices/{inv_id}/add-line-item", response_model=InvoiceLineItemResponse, status_code=201)
+@router.post(
+    "/invoices/{inv_id}/add-line-item",
+    response_model=InvoiceLineItemResponse,
+    status_code=201,
+)
 async def add_line_item(
     inv_id: uuid.UUID,
     body: InvoiceLineItemCreate,
@@ -131,7 +144,11 @@ async def add_line_item(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
 ) -> object:
     result = await session.execute(
-        select(Invoice).where(Invoice.id == inv_id, Invoice.tenant_id == get_current_tenant_id(), Invoice.deleted_at.is_(None))
+        select(Invoice).where(
+            Invoice.id == inv_id,
+            Invoice.tenant_id == get_current_tenant_id(),
+            Invoice.deleted_at.is_(None),
+        )
     )
     inv = result.scalar_one_or_none()
     if not inv:
@@ -193,7 +210,7 @@ async def record_payment(
     if not inv:
         raise NotFoundError("Invoice not found")
     inv.paid_amount = body.paid_amount
-    inv.paid_at = body.paid_at or datetime.now(timezone.utc)
+    inv.paid_at = body.paid_at or datetime.now(UTC)
     inv.status = "paid" if body.paid_amount >= inv.total_amount else "partially_paid"
     await session.commit()
     return inv

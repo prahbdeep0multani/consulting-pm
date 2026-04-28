@@ -24,6 +24,7 @@ async def check_db() -> bool:
         return False
     try:
         import sqlalchemy
+
         async with _engine.connect() as conn:
             await conn.execute(sqlalchemy.text("SELECT 1"))
         return True

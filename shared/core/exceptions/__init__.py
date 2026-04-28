@@ -12,12 +12,12 @@ from .handlers import register_exception_handlers
 
 __all__ = [
     "AppError",
-    "NotFoundError",
-    "AuthorizationError",
     "AuthenticationError",
+    "AuthorizationError",
     "ConflictError",
-    "ValidationError",
-    "UnprocessableError",
+    "NotFoundError",
     "RateLimitError",
+    "UnprocessableError",
+    "ValidationError",
     "register_exception_handlers",
 ]

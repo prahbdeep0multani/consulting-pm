@@ -2,16 +2,23 @@ import uuid
 from datetime import date, datetime
 from decimal import Decimal
 
+from shared.core.models.base import (
+    Base,
+    PrimaryKeyMixin,
+    SoftDeleteMixin,
+    TenantMixin,
+    TimestampMixin,
+)
 from sqlalchemy import NUMERIC, CheckConstraint, Date, DateTime, SmallInteger, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from shared.core.models.base import Base, PrimaryKeyMixin, SoftDeleteMixin, TenantMixin, TimestampMixin
-
 
 class Allocation(Base, PrimaryKeyMixin, TenantMixin, TimestampMixin, SoftDeleteMixin):
     __tablename__ = "allocations"
-    __table_args__ = (CheckConstraint("allocation_pct >= 0 AND allocation_pct <= 100", name="chk_allocation_pct"),)
+    __table_args__ = (
+        CheckConstraint("allocation_pct >= 0 AND allocation_pct <= 100", name="chk_allocation_pct"),
+    )
 
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
@@ -27,7 +34,9 @@ class LeaveRequest(Base, PrimaryKeyMixin, TenantMixin, TimestampMixin):
     __tablename__ = "leave_requests"
 
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
-    type: Mapped[str] = mapped_column(String(30), nullable=False)  # annual|sick|unpaid|public_holiday|other
+    type: Mapped[str] = mapped_column(
+        String(30), nullable=False
+    )  # annual|sick|unpaid|public_holiday|other
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     total_days: Mapped[Decimal] = mapped_column(NUMERIC(4, 1), nullable=False)

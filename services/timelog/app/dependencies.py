@@ -1,7 +1,6 @@
 import uuid
 
 from fastapi import Request
-
 from shared.core.exceptions import AuthenticationError
 from shared.core.models.base import set_tenant_id
 

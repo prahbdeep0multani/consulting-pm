@@ -4,8 +4,9 @@ Revision ID: 0001
 Revises:
 Create Date: 2024-01-01 00:00:00.000000
 """
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
 revision = "0001"
@@ -27,8 +28,18 @@ def upgrade() -> None:
         sa.Column("end_date", sa.Date),
         sa.Column("notes", sa.Text),
         sa.Column("created_by", postgresql.UUID(as_uuid=True)),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True)),
         sa.CheckConstraint("allocation_pct BETWEEN 0 AND 100", name="ck_allocation_pct_range"),
     )
@@ -52,8 +63,18 @@ def upgrade() -> None:
         sa.Column("approved_at", sa.DateTime(timezone=True)),
         sa.Column("rejection_reason", sa.Text),
         sa.Column("notes", sa.Text),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            nullable=False,
+            server_default=sa.text("now()"),
+        ),
     )
     op.create_index(
         "ix_leave_requests_tenant_user_start",

@@ -1,4 +1,3 @@
-import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
@@ -46,10 +45,12 @@ async def update_my_tenant(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> object:
     from ..repositories.tenant_repo import TenantRepository
+
     repo = TenantRepository(session)
     tenant = await repo.get_by_id(current_user.tenant_id)
     if not tenant:
         from shared.core.exceptions import NotFoundError
+
         raise NotFoundError("Tenant not found")
     updates = body.model_dump(exclude_none=True)
     return await repo.update(tenant, **updates)
@@ -70,6 +71,7 @@ async def delete_tenant(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
     from ..repositories.tenant_repo import TenantRepository
+
     repo = TenantRepository(session)
     tenant = await repo.get_by_id(current_user.tenant_id)
     if tenant:

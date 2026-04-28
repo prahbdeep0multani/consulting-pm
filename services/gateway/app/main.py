@@ -1,13 +1,11 @@
-import uuid
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 import httpx
 import redis.asyncio as aioredis
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
-
 from shared.core.exceptions import AuthenticationError, RateLimitError, register_exception_handlers
 from shared.core.health import create_health_router
 from shared.core.middleware import CorrelationIdMiddleware
@@ -86,12 +84,18 @@ async def _check_redis() -> bool:
 app.include_router(create_health_router("gateway", [("redis", _check_redis)]))
 
 
-@app.api_route("/api/{service}/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"])
+@app.api_route(
+    "/api/{service}/{path:path}",
+    methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"],
+)
 async def route(service: str, path: str, request: Request) -> Response:
     prefix = f"/api/{service}"
     upstream = _ROUTES.get(prefix)
     if not upstream:
-        return JSONResponse(status_code=404, content={"error": "not_found", "message": f"No route for /{service}"})
+        return JSONResponse(
+            status_code=404,
+            content={"error": "not_found", "message": f"No route for /{service}"},
+        )
 
     # Auth validation (skip for public paths)
     if not any(request.url.path.startswith(p) for p in _PUBLIC_AUTH_PREFIXES):
@@ -99,7 +103,10 @@ async def route(service: str, path: str, request: Request) -> Response:
         if not auth_header.startswith("Bearer "):
             return JSONResponse(
                 status_code=401,
-                content={"error": "authentication_error", "message": "Missing Authorization header"},
+                content={
+                    "error": "authentication_error",
+                    "message": "Missing Authorization header",
+                },
             )
         try:
             claims = _jwt_handler.decode_access_token(auth_header.removeprefix("Bearer "))  # type: ignore[union-attr]
@@ -107,16 +114,23 @@ async def route(service: str, path: str, request: Request) -> Response:
             request.state.tenant_id = claims.tenant_id
             request.state.roles = claims.roles
         except AuthenticationError as e:
-            return JSONResponse(status_code=401, content={"error": "authentication_error", "message": str(e)})
+            return JSONResponse(
+                status_code=401,
+                content={"error": "authentication_error", "message": str(e)},
+            )
 
     # Rate limiting
     try:
         await apply_rate_limits(
-            request, _rate_limiter,  # type: ignore[arg-type]
+            request,
+            _rate_limiter,  # type: ignore[arg-type]
             settings.rate_limit_per_ip_rps,
             settings.rate_limit_per_tenant_rps,
         )
     except RateLimitError as e:
-        return JSONResponse(status_code=429, content={"error": "rate_limit_exceeded", "message": str(e)})
+        return JSONResponse(
+            status_code=429,
+            content={"error": "rate_limit_exceeded", "message": str(e)},
+        )
 
     return await proxy_request(request, upstream, _http_client)  # type: ignore[arg-type]

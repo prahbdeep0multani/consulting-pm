@@ -1,12 +1,11 @@
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
 from shared.core.exceptions import register_exception_handlers
 from shared.core.health import create_health_router
-from shared.core.middleware import CorrelationIdMiddleware, JWTAuthMiddleware, TenantMiddleware
+from shared.core.middleware import CorrelationIdMiddleware, TenantMiddleware
 from shared.core.security.jwt import JWTHandler
 
 from .config import settings

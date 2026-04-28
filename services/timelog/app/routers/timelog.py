@@ -1,26 +1,23 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from shared.core.exceptions import AuthorizationError, NotFoundError, UnprocessableError
+from shared.core.models.base import get_current_tenant_id
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from shared.core.exceptions import AuthorizationError, NotFoundError, UnprocessableError
 
 from ..database import get_session
 from ..dependencies import get_current_tenant_id_dep, get_current_user_id, get_user_roles
 from ..models.timelog import TimeEntry, TimeEntryApproval
 from ..schemas.timelog import (
-    ApprovalResponse,
     RejectRequest,
     TimeEntryCreate,
     TimeEntryResponse,
     TimeEntryUpdate,
     TimerStopRequest,
 )
-
-from shared.core.models.base import get_current_tenant_id
 
 router = APIRouter(tags=["timelog"])
 
@@ -118,7 +115,7 @@ async def delete_entry(
         raise AuthorizationError("Cannot delete another user's time entry")
     if entry.status != "draft":
         raise UnprocessableError("Only draft entries can be deleted")
-    entry.deleted_at = datetime.now(timezone.utc)
+    entry.deleted_at = datetime.now(UTC)
     await session.commit()
 
 
@@ -131,7 +128,7 @@ async def start_timer(
     entry = await _get_entry(session, entry_id)
     if entry.started_at:
         raise UnprocessableError("Timer already started")
-    entry.started_at = datetime.now(timezone.utc)
+    entry.started_at = datetime.now(UTC)
     await session.commit()
     return entry
 
@@ -146,7 +143,7 @@ async def stop_timer(
     entry = await _get_entry(session, entry_id)
     if not entry.started_at:
         raise UnprocessableError("Timer not started")
-    ended = body.ended_at or datetime.now(timezone.utc)
+    ended = body.ended_at or datetime.now(UTC)
     entry.ended_at = ended
     delta = ended - entry.started_at
     entry.duration_minutes = max(1, int(delta.total_seconds() / 60))

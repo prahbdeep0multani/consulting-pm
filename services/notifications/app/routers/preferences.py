@@ -1,7 +1,8 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends
+from shared.core.models.base import get_current_tenant_id
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,7 +10,6 @@ from ..database import get_session
 from ..dependencies import get_current_tenant_id_dep, get_current_user_id
 from ..models.notification import NotificationPreference
 from ..schemas.notification import NotificationPreferenceResponse, NotificationPreferenceUpdate
-from shared.core.models.base import get_current_tenant_id
 
 router = APIRouter(prefix="/preferences", tags=["preferences"])
 
@@ -54,7 +54,7 @@ async def replace_preferences(
     prefs = await _get_or_create_prefs(session, tenant_id, user_id)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(prefs, field, value)
-    prefs.updated_at = datetime.now(timezone.utc)
+    prefs.updated_at = datetime.now(UTC)
     await session.commit()
     await session.refresh(prefs)
     return NotificationPreferenceResponse.model_validate(prefs)
@@ -71,7 +71,7 @@ async def update_preferences(
     prefs = await _get_or_create_prefs(session, tenant_id, user_id)
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(prefs, field, value)
-    prefs.updated_at = datetime.now(timezone.utc)
+    prefs.updated_at = datetime.now(UTC)
     await session.commit()
     await session.refresh(prefs)
     return NotificationPreferenceResponse.model_validate(prefs)

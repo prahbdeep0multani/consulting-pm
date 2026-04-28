@@ -1,6 +1,11 @@
-from .base import BaseEvent
 from .auth_events import TenantCreatedEvent, UserDeactivatedEvent, UserRegisteredEvent
-from .billing_events import InvoiceCreatedEvent, InvoiceOverdueEvent, InvoicePaidEvent, InvoiceSentEvent
+from .base import BaseEvent
+from .billing_events import (
+    InvoiceCreatedEvent,
+    InvoiceOverdueEvent,
+    InvoicePaidEvent,
+    InvoiceSentEvent,
+)
 from .project_events import (
     MilestoneCompletedEvent,
     ProjectCreatedEvent,
@@ -13,23 +18,23 @@ from .resource_events import AllocationCreatedEvent, LeaveRequestApprovedEvent
 from .timelog_events import TimeEntryApprovedEvent, TimeEntryRejectedEvent, TimeEntrySubmittedEvent
 
 __all__ = [
+    "AllocationCreatedEvent",
     "BaseEvent",
-    "TenantCreatedEvent",
-    "UserRegisteredEvent",
-    "UserDeactivatedEvent",
+    "InvoiceCreatedEvent",
+    "InvoiceOverdueEvent",
+    "InvoicePaidEvent",
+    "InvoiceSentEvent",
+    "LeaveRequestApprovedEvent",
+    "MilestoneCompletedEvent",
     "ProjectCreatedEvent",
     "ProjectStatusChangedEvent",
-    "TaskCreatedEvent",
     "TaskAssignedEvent",
+    "TaskCreatedEvent",
     "TaskStatusChangedEvent",
-    "MilestoneCompletedEvent",
-    "TimeEntrySubmittedEvent",
+    "TenantCreatedEvent",
     "TimeEntryApprovedEvent",
     "TimeEntryRejectedEvent",
-    "InvoiceCreatedEvent",
-    "InvoiceSentEvent",
-    "InvoicePaidEvent",
-    "InvoiceOverdueEvent",
-    "AllocationCreatedEvent",
-    "LeaveRequestApprovedEvent",
+    "TimeEntrySubmittedEvent",
+    "UserDeactivatedEvent",
+    "UserRegisteredEvent",
 ]

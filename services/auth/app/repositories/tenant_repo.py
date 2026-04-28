@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,10 +27,14 @@ class TenantRepository:
         return result.scalar_one_or_none()
 
     async def count_active_users(self, tenant_id: uuid.UUID) -> int:
-        from ..models.user import User
         from sqlalchemy import func
+
+        from ..models.user import User
+
         result = await self._session.execute(
-            select(func.count()).where(User.tenant_id == tenant_id, User.is_active == True, User.deleted_at.is_(None))
+            select(func.count()).where(
+                User.tenant_id == tenant_id, User.is_active, User.deleted_at.is_(None)
+            )
         )
         return result.scalar_one()
 
@@ -40,7 +45,8 @@ class TenantRepository:
         return tenant
 
     async def soft_delete(self, tenant: Tenant) -> None:
-        from datetime import datetime, timezone
-        tenant.deleted_at = datetime.now(timezone.utc)
+        from datetime import datetime
+
+        tenant.deleted_at = datetime.now(UTC)
         tenant.is_active = False
         await self._session.flush()

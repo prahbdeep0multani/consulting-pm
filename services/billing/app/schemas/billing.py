@@ -1,10 +1,8 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import Field
-
 from shared.core.schemas.base import BaseSchema, TimestampSchema
 
 

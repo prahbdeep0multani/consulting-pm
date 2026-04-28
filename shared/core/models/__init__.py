@@ -1,3 +1,3 @@
 from .base import Base, PrimaryKeyMixin, SoftDeleteMixin, TenantMixin, TimestampMixin
 
-__all__ = ["Base", "PrimaryKeyMixin", "TenantMixin", "TimestampMixin", "SoftDeleteMixin"]
+__all__ = ["Base", "PrimaryKeyMixin", "SoftDeleteMixin", "TenantMixin", "TimestampMixin"]

@@ -9,6 +9,11 @@ from .resource import (
 )
 
 __all__ = [
-    "AllocationCreate", "AllocationUpdate", "AllocationResponse",
-    "LeaveRequestCreate", "LeaveRequestUpdate", "LeaveRequestResponse", "RejectLeaveRequest",
+    "AllocationCreate",
+    "AllocationResponse",
+    "AllocationUpdate",
+    "LeaveRequestCreate",
+    "LeaveRequestResponse",
+    "LeaveRequestUpdate",
+    "RejectLeaveRequest",
 ]

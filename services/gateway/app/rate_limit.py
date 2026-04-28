@@ -2,7 +2,6 @@ import time
 
 import redis.asyncio as aioredis
 from fastapi import Request
-
 from shared.core.exceptions import RateLimitError
 
 
@@ -24,10 +23,14 @@ class SlidingWindowRateLimiter:
 
         count = results[2]
         if count > limit:
-            raise RateLimitError(f"Rate limit exceeded: {count}/{limit} requests in {self._window}s window")
+            raise RateLimitError(
+                f"Rate limit exceeded: {count}/{limit} requests in {self._window}s window"
+            )
 
 
-async def apply_rate_limits(request: Request, limiter: SlidingWindowRateLimiter, per_ip: int, per_tenant: int) -> None:
+async def apply_rate_limits(
+    request: Request, limiter: SlidingWindowRateLimiter, per_ip: int, per_tenant: int
+) -> None:
     client_ip = request.client.host if request.client else "unknown"
     await limiter.check(f"rl:ip:{client_ip}", per_ip)
 

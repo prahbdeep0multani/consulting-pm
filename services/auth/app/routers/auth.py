@@ -1,9 +1,8 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.core.security.jwt import JWTHandler
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session
 from ..dependencies import get_current_user, get_jwt_handler
@@ -18,8 +17,8 @@ from ..schemas.auth import (
     RefreshResponse,
     ResetPasswordRequest,
 )
-from ..services.auth_service import AuthService
 from ..security.totp import TOTPHandler
+from ..services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -135,6 +134,7 @@ async def mfa_verify(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
     from shared.core.exceptions import AuthenticationError
+
     if not current_user.mfa_secret or not TOTPHandler.verify(current_user.mfa_secret, body.code):
         raise AuthenticationError("Invalid TOTP code")
     await session.commit()
@@ -147,6 +147,7 @@ async def mfa_disable(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
     from shared.core.exceptions import AuthenticationError
+
     if not current_user.mfa_secret or not TOTPHandler.verify(current_user.mfa_secret, body.code):
         raise AuthenticationError("Invalid TOTP code")
     current_user.mfa_secret = None

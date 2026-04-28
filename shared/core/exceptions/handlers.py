@@ -7,7 +7,9 @@ from pydantic import ValidationError as PydanticValidationError
 from .base import AppError
 
 
-def _error_response(status_code: int, error_code: str, message: str, detail: object = None) -> JSONResponse:
+def _error_response(
+    status_code: int, error_code: str, message: str, detail: object = None
+) -> JSONResponse:
     body = {
         "error": error_code,
         "message": message,

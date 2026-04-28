@@ -2,9 +2,8 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.core.exceptions import NotFoundError, UnprocessableError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_session
 from ..dependencies import get_current_tenant_id_dep, get_current_user_id
@@ -21,6 +20,7 @@ router = APIRouter(tags=["attachments"])
 
 def get_storage():
     from ..main import storage
+
     return storage
 
 
@@ -35,7 +35,9 @@ async def initiate_upload(
     attachment_id = uuid.uuid4()
     object_key = s.make_object_key(tid, attachment_id, body.filename)
 
-    upload_url = await s.generate_presigned_put_url(object_key, body.content_type, expire_seconds=300)
+    upload_url = await s.generate_presigned_put_url(
+        object_key, body.content_type, expire_seconds=300
+    )
 
     # Create a pending attachment record
     repo = AttachmentRepository(session)
@@ -99,10 +101,16 @@ async def get_attachment(
     s = get_storage()
     download_url = await s.generate_presigned_get_url(a.storage_key)
     return AttachmentResponse(
-        id=a.id, tenant_id=a.tenant_id, filename=a.filename,
-        content_type=a.content_type, size_bytes=a.size_bytes,
-        task_id=a.task_id, project_id=a.project_id, uploaded_by=a.uploaded_by,
-        created_at=a.created_at, download_url=download_url,
+        id=a.id,
+        tenant_id=a.tenant_id,
+        filename=a.filename,
+        content_type=a.content_type,
+        size_bytes=a.size_bytes,
+        task_id=a.task_id,
+        project_id=a.project_id,
+        uploaded_by=a.uploaded_by,
+        created_at=a.created_at,
+        download_url=download_url,
     )
 
 

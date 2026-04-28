@@ -2,10 +2,9 @@ import uuid
 from typing import Annotated
 
 from fastapi import Depends, Request
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from shared.core.exceptions import AuthenticationError, AuthorizationError
 from shared.core.security.jwt import JWTHandler
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from .database import get_session
 from .models.user import User
@@ -14,6 +13,7 @@ from .repositories.user_repo import UserRepository
 
 def get_jwt_handler() -> JWTHandler:
     from .main import jwt_handler
+
     return jwt_handler
 
 

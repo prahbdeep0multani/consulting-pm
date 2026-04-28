@@ -3,10 +3,17 @@ import os
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy.ext.asyncio import create_async_engine
-
+from app.models import (
+    PasswordResetToken,
+    RefreshToken,
+    Role,
+    Tenant,
+    TenantSettings,
+    User,
+    UserRole,
+)
 from shared.core.models.base import Base
-from app.models import Tenant, TenantSettings, User, Role, UserRole, RefreshToken, PasswordResetToken  # noqa: F401
+from sqlalchemy.ext.asyncio import create_async_engine
 
 config = context.config
 if config.config_file_name is not None:
@@ -26,11 +33,13 @@ def run_migrations_offline() -> None:
 async def run_migrations_online() -> None:
     engine = create_async_engine(DATABASE_URL)
     async with engine.begin() as conn:
-        await conn.run_sync(lambda sync_conn: context.configure(
-            connection=sync_conn,
-            target_metadata=target_metadata,
-            compare_type=True,
-        ))
+        await conn.run_sync(
+            lambda sync_conn: context.configure(
+                connection=sync_conn,
+                target_metadata=target_metadata,
+                compare_type=True,
+            )
+        )
         await conn.run_sync(lambda _: context.run_migrations())
     await engine.dispose()
 
