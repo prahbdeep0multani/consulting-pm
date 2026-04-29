@@ -1,11 +1,9 @@
-from passlib.context import CryptContext
-
-_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+import bcrypt
 
 
 def hash_password(password: str) -> str:
-    return str(_ctx.hash(password))
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return bool(_ctx.verify(plain, hashed))
+    return bcrypt.checkpw(plain.encode(), hashed.encode())

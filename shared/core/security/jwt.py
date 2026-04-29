@@ -15,8 +15,8 @@ ALGORITHM = "RS256"
 class TokenClaims(BaseModel):
     sub: str  # user_id
     tenant_id: str
-    roles: list[str]
-    permissions: list[str]
+    roles: list[str] = []
+    permissions: list[str] = []
     exp: int
     iat: int
     jti: str
