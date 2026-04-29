@@ -16,7 +16,7 @@ class EventConsumer:
 
     def __init__(
         self,
-        redis_client: aioredis.Redis,
+        redis_client: aioredis.Redis[Any],
         service_name: str,
         streams: list[str],
         batch_size: int = 10,
@@ -51,7 +51,7 @@ class EventConsumer:
                 results = await self._redis.xreadgroup(
                     self._service,
                     f"{self._service}-consumer-1",
-                    stream_ids,  # type: ignore[arg-type]
+                    stream_ids,
                     count=self._batch_size,
                     block=self._block_ms,
                 )
@@ -73,7 +73,7 @@ class EventConsumer:
             handler = self._handlers.get(event_type)
             if handler:
                 await handler(data)
-            await self._redis.xack(stream, self._service, msg_id)
+            await self._redis.xack(stream, self._service, msg_id)  # type: ignore[no-untyped-call]
         except Exception as e:
             logger.error("Failed to handle message %s: %s", msg_id, e)
 

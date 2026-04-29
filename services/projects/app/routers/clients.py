@@ -21,7 +21,7 @@ async def list_clients(
     offset: int = 0,
 ) -> list[Any]:
     repo = ClientRepository(session)
-    return await repo.list(limit, offset)  # type: ignore[return-value]
+    return await repo.list(limit, offset)  # type: ignore[no-any-return]
 
 
 @router.post("", response_model=ClientResponse, status_code=201)

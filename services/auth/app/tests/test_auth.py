@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient
 
 
-@pytest.fixture()  # type: ignore[misc]
+@pytest.fixture()  # type: ignore[untyped-decorator]
 async def registered_tenant(client: AsyncClient) -> dict[str, str]:
     response = await client.post(
         "/tenants",
@@ -19,7 +19,7 @@ async def registered_tenant(client: AsyncClient) -> dict[str, str]:
     return {"slug": "auth-test-corp", "email": "admin@auth-test.com", "password": "Securepass123!"}
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio  # type: ignore[untyped-decorator]
 async def test_login_success(client: AsyncClient, registered_tenant: dict[str, str]) -> None:
     response = await client.post(
         "/auth/login",
@@ -36,7 +36,7 @@ async def test_login_success(client: AsyncClient, registered_tenant: dict[str, s
     assert data["token_type"] == "bearer"
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio  # type: ignore[untyped-decorator]
 async def test_login_wrong_password(client: AsyncClient, registered_tenant: dict[str, str]) -> None:
     response = await client.post(
         "/auth/login",
@@ -49,7 +49,7 @@ async def test_login_wrong_password(client: AsyncClient, registered_tenant: dict
     assert response.status_code == 401
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio  # type: ignore[untyped-decorator]
 async def test_refresh_token_rotation(
     client: AsyncClient, registered_tenant: dict[str, str]
 ) -> None:
@@ -85,7 +85,7 @@ async def test_refresh_token_rotation(
     assert reuse_resp.status_code == 401
 
 
-@pytest.mark.asyncio  # type: ignore[misc]
+@pytest.mark.asyncio  # type: ignore[untyped-decorator]
 async def test_tenant_isolation(client: AsyncClient) -> None:
     """Users from tenant A cannot log in with tenant B's slug."""
     await client.post(

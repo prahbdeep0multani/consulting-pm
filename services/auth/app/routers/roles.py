@@ -20,7 +20,7 @@ async def list_roles(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> list[Any]:
     repo = RoleRepository(session)
-    return await repo.list_by_tenant(current_user.tenant_id)  # type: ignore[return-value]
+    return await repo.list_by_tenant(current_user.tenant_id)  # type: ignore[no-any-return]
 
 
 @router.post("", response_model=RoleResponse, status_code=201)

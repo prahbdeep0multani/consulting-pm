@@ -22,7 +22,7 @@ class NotificationResponse(BaseSchema):
 class NotificationPreferenceUpdate(BaseSchema):
     email_enabled: bool | None = None
     in_app_enabled: bool | None = None
-    preferences: dict[str, Any][str, Any] | None = None
+    preferences: dict[str, Any] | None = None
     quiet_hours_start: str | None = None
     quiet_hours_end: str | None = None
     timezone: str | None = None

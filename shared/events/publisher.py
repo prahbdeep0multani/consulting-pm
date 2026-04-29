@@ -1,3 +1,5 @@
+from typing import Any
+
 import redis.asyncio as aioredis
 
 from .schemas.base import BaseEvent
@@ -10,12 +12,12 @@ STREAM_RESOURCES = "events:resources"
 
 
 class EventPublisher:
-    def __init__(self, redis_client: aioredis.Redis) -> None:
+    def __init__(self, redis_client: aioredis.Redis[Any]) -> None:
         self._redis = redis_client
 
     async def publish(self, stream: str, event: BaseEvent) -> str:
         """XADD event to stream. Returns the stream entry ID."""
-        msg_id: str = await self._redis.xadd(  # type: ignore[arg-type]
+        msg_id: str = await self._redis.xadd(
             stream, event.to_stream_dict(), maxlen=10_000, approximate=True
         )
         return msg_id

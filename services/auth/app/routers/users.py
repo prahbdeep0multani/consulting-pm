@@ -24,7 +24,7 @@ def _to_response(user: User) -> UserResponse:
         is_active=user.is_active,
         is_verified=user.is_verified,
         last_login_at=user.last_login_at,
-        roles=roles,  # type: ignore[arg-type]
+        roles=roles,
         created_at=user.created_at,
     )
 
@@ -54,7 +54,7 @@ async def update_me(
 ) -> UserResponse:
     svc = UserService(session)
     updated = await svc.update_user(current_user.id, **body.model_dump(exclude_none=True))
-    return _to_response(updated)  # type: ignore[arg-type]
+    return _to_response(updated)
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -65,7 +65,7 @@ async def get_user(
 ) -> UserResponse:
     svc = UserService(session)
     user = await svc.get_user(user_id)
-    return _to_response(user)  # type: ignore[arg-type]
+    return _to_response(user)
 
 
 @router.patch("/{user_id}", response_model=UserResponse)
@@ -77,7 +77,7 @@ async def update_user(
 ) -> UserResponse:
     svc = UserService(session)
     updated = await svc.update_user(user_id, **body.model_dump(exclude_none=True))
-    return _to_response(updated)  # type: ignore[arg-type]
+    return _to_response(updated)
 
 
 @router.delete("/{user_id}", status_code=204)

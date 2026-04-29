@@ -30,7 +30,7 @@ async def list_projects(
     offset: int = 0,
 ) -> list[Any]:
     repo = ProjectRepository(session)
-    return await repo.list(limit, offset, status, client_id)  # type: ignore[return-value]
+    return await repo.list(limit, offset, status, client_id)  # type: ignore[no-any-return]
 
 
 @router.post("/projects", response_model=ProjectResponse, status_code=201)
@@ -99,7 +99,7 @@ async def list_milestones(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
 ) -> list[Any]:
     repo = MilestoneRepository(session)
-    return await repo.list(project_id)  # type: ignore[return-value]
+    return await repo.list(project_id)  # type: ignore[no-any-return]
 
 
 @router.post("/projects/{project_id}/milestones", response_model=MilestoneResponse, status_code=201)

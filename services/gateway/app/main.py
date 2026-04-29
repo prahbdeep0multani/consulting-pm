@@ -17,7 +17,7 @@ from .rate_limit import SlidingWindowRateLimiter, apply_rate_limits
 
 _ROUTES: dict[str, str] = {}
 _http_client: httpx.AsyncClient | None = None
-_redis: aioredis.Redis | None = None
+_redis: aioredis.Redis[str] | None = None
 _jwt_handler: JWTHandler | None = None
 _rate_limiter: SlidingWindowRateLimiter | None = None
 
@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if _http_client:
         await _http_client.aclose()
     if _redis:
-        await _redis.aclose()
+        await _redis.aclose()  # type: ignore[attr-defined]
 
 
 app = FastAPI(title="API Gateway", version="0.1.0", lifespan=lifespan)
@@ -75,7 +75,7 @@ register_exception_handlers(app)
 
 async def _check_redis() -> bool:
     try:
-        await _redis.ping()  # type: ignore[union-attr, misc]
+        await _redis.ping()  # type: ignore[union-attr]
         return True
     except Exception:
         return False
@@ -133,4 +133,4 @@ async def route(service: str, path: str, request: Request) -> Response:
             content={"error": "rate_limit_exceeded", "message": str(e)},
         )
 
-    return await proxy_request(request, upstream, _http_client)  # type: ignore[no-any-return, arg-type]
+    return await proxy_request(request, upstream, _http_client)  # type: ignore[no-any-return]

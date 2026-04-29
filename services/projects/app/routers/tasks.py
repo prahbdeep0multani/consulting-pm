@@ -23,7 +23,7 @@ async def list_tasks(
     assignee_id: uuid.UUID | None = None,
 ) -> list[Any]:
     repo = TaskRepository(session)
-    return await repo.list(project_id, status, assignee_id, parent_only=True)  # type: ignore[return-value]
+    return await repo.list(project_id, status, assignee_id, parent_only=True)  # type: ignore[no-any-return]
 
 
 @router.post("/projects/{project_id}/tasks", response_model=TaskResponse, status_code=201)
@@ -110,7 +110,7 @@ async def list_comments(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
 ) -> list[Any]:
     repo = CommentRepository(session)
-    return await repo.list(task_id)  # type: ignore[return-value]
+    return await repo.list(task_id)  # type: ignore[no-any-return]
 
 
 @router.post("/tasks/{task_id}/comments", response_model=CommentResponse, status_code=201)

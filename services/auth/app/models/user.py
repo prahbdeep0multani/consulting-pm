@@ -1,7 +1,11 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from shared.core.models.base import Base, PrimaryKeyMixin, SoftDeleteMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from .token import RefreshToken
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -59,7 +63,7 @@ class User(Base, PrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     user_roles: Mapped[list[UserRole]] = relationship(
         "UserRole", back_populates="user", lazy="selectin", cascade="all, delete-orphan"
     )
-    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(  # noqa: F821  # type: ignore[name-defined]
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(  # noqa: F821
         "RefreshToken",
         back_populates="user",
         lazy="noload",

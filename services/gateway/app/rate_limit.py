@@ -6,7 +6,7 @@ from shared.core.exceptions import RateLimitError
 
 
 class SlidingWindowRateLimiter:
-    def __init__(self, redis_client: aioredis.Redis, window_seconds: int = 1) -> None:
+    def __init__(self, redis_client: aioredis.Redis[str], window_seconds: int = 1) -> None:
         self._redis = redis_client
         self._window = window_seconds
 

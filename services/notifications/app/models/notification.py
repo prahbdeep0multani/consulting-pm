@@ -36,7 +36,7 @@ class NotificationPreference(Base, PrimaryKeyMixin, TenantMixin):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
     email_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     in_app_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    preferences: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    preferences: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     quiet_hours_start: Mapped[time | None] = mapped_column(Time)
     quiet_hours_end: Mapped[time | None] = mapped_column(Time)
     timezone: Mapped[str] = mapped_column(String(50), nullable=False, default="UTC")
