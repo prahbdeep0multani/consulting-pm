@@ -6,7 +6,7 @@ import redis.asyncio as aioredis
 
 class RedisCache:
     def __init__(self, url: str) -> None:
-        self._client: aioredis.Redis[Any] = aioredis.from_url(url, decode_responses=True)
+        self._client: aioredis.Redis = aioredis.from_url(url, decode_responses=True)
 
     async def get(self, key: str) -> Any | None:
         value = await self._client.get(key)
@@ -38,7 +38,7 @@ class RedisCache:
 
     async def ping(self) -> bool:
         try:
-            await self._client.ping()
+            await self._client.ping()  # type: ignore[misc]
             return True
         except Exception:
             return False
@@ -47,7 +47,7 @@ class RedisCache:
         await self._client.aclose()  # type: ignore[attr-defined]
 
     @property
-    def client(self) -> aioredis.Redis[Any]:
+    def client(self) -> aioredis.Redis:
         return self._client
 
 

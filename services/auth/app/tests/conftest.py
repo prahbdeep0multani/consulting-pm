@@ -1,6 +1,5 @@
 import uuid
 from collections.abc import AsyncGenerator
-from typing import Any
 
 import pytest
 import pytest_asyncio

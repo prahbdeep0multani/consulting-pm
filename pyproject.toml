@@ -17,6 +17,20 @@ strict = true
 ignore_missing_imports = true
 plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
 
+[[tool.mypy.overrides]]
+# redis-py stubs differ between redis 5.x (bundled, non-generic Redis) and
+# types-redis 4.x (generic Redis). Disable type-arg and unused-ignore in
+# files that directly annotate the Redis client so both stub versions pass.
+module = [
+    "shared.core.cache.redis",
+    "shared.events.publisher",
+    "shared.events.consumer",
+    "app.rate_limit",
+    "app.main",
+]
+disable_error_code = ["type-arg"]
+warn_unused_ignores = false
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

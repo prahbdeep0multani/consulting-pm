@@ -17,7 +17,7 @@ from .rate_limit import SlidingWindowRateLimiter, apply_rate_limits
 
 _ROUTES: dict[str, str] = {}
 _http_client: httpx.AsyncClient | None = None
-_redis: aioredis.Redis[str] | None = None
+_redis: aioredis.Redis | None = None
 _jwt_handler: JWTHandler | None = None
 _rate_limiter: SlidingWindowRateLimiter | None = None
 
@@ -75,7 +75,7 @@ register_exception_handlers(app)
 
 async def _check_redis() -> bool:
     try:
-        await _redis.ping()  # type: ignore[union-attr]
+        await _redis.ping()  # type: ignore[union-attr, misc]
         return True
     except Exception:
         return False

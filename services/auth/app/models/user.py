@@ -63,7 +63,7 @@ class User(Base, PrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     user_roles: Mapped[list[UserRole]] = relationship(
         "UserRole", back_populates="user", lazy="selectin", cascade="all, delete-orphan"
     )
-    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(  # noqa: F821
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(
         "RefreshToken",
         back_populates="user",
         lazy="noload",

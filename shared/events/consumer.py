@@ -16,7 +16,7 @@ class EventConsumer:
 
     def __init__(
         self,
-        redis_client: aioredis.Redis[Any],
+        redis_client: aioredis.Redis,
         service_name: str,
         streams: list[str],
         batch_size: int = 10,
@@ -48,7 +48,7 @@ class EventConsumer:
         stream_ids = dict.fromkeys(self._streams, ">")
         while self._running:
             try:
-                results = await self._redis.xreadgroup(
+                results = await self._redis.xreadgroup(  # type: ignore[arg-type]
                     self._service,
                     f"{self._service}-consumer-1",
                     stream_ids,
