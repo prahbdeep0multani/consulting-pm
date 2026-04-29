@@ -9,7 +9,7 @@ from .celery_app import celery_app
 logger = logging.getLogger(__name__)
 
 
-@celery_app.task(name="app.tasks.invoice_tasks.check_overdue_invoices")
+@celery_app.task(name="app.tasks.invoice_tasks.check_overdue_invoices")  # type: ignore[misc]
 def check_overdue_invoices() -> None:
     asyncio.run(_check_overdue())
 

@@ -1,6 +1,6 @@
 import uuid
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from shared.core.exceptions import AuthorizationError, NotFoundError, UnprocessableError
@@ -44,7 +44,7 @@ async def list_entries(
     project_id: uuid.UUID | None = None,
     status: str | None = None,
     limit: int = 50,
-) -> list:
+) -> list[Any]:
     q = select(TimeEntry).where(
         TimeEntry.user_id == user_id,
         TimeEntry.tenant_id == get_current_tenant_id(),
@@ -230,7 +230,7 @@ async def pending_approvals(
     session: Annotated[AsyncSession, Depends(get_session)],
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
     roles: Annotated[set[str], Depends(get_user_roles)],
-) -> list:
+) -> list[Any]:
     if not roles.intersection({"tenant_admin", "project_manager"}):
         raise AuthorizationError("Manager or admin role required")
     result = await session.execute(

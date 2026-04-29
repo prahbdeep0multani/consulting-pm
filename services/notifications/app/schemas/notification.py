@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from shared.core.schemas.base import BaseSchema
 
@@ -11,7 +12,7 @@ class NotificationResponse(BaseSchema):
     type: str
     title: str
     body: str
-    payload: dict
+    payload: dict[str, Any]
     channel: str
     is_read: bool
     read_at: datetime | None
@@ -21,7 +22,7 @@ class NotificationResponse(BaseSchema):
 class NotificationPreferenceUpdate(BaseSchema):
     email_enabled: bool | None = None
     in_app_enabled: bool | None = None
-    preferences: dict | None = None
+    preferences: dict[str, Any][str, Any] | None = None
     quiet_hours_start: str | None = None
     quiet_hours_end: str | None = None
     timezone: str | None = None
@@ -32,5 +33,5 @@ class NotificationPreferenceResponse(BaseSchema):
     user_id: uuid.UUID
     email_enabled: bool
     in_app_enabled: bool
-    preferences: dict
+    preferences: dict[str, Any]
     timezone: str

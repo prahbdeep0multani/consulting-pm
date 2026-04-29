@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     minio_endpoint: str = "localhost:9000"
     minio_access_key: str = "minioadmin"
-    minio_secret_key: str = "minioadmin"
+    minio_secret_key: str = "minioadmin"  # noqa: S105
     minio_bucket_attachments: str = "attachments"
     minio_use_ssl: bool = False
     presigned_url_expire_seconds: int = 300

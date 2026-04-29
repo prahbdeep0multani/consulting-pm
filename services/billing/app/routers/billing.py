@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from shared.core.exceptions import AuthorizationError, NotFoundError, UnprocessableError
@@ -49,7 +49,7 @@ def _recalculate_totals(invoice: Invoice) -> None:
 async def list_rates(
     session: Annotated[AsyncSession, Depends(get_session)],
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
-) -> list:
+) -> list[Any]:
     result = await session.execute(
         select(BillingRate).where(
             BillingRate.tenant_id == get_current_tenant_id(), BillingRate.is_active
@@ -82,7 +82,7 @@ async def list_invoices(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
     status: str | None = None,
     client_id: uuid.UUID | None = None,
-) -> list:
+) -> list[Any]:
     q = select(Invoice).where(
         Invoice.tenant_id == get_current_tenant_id(), Invoice.deleted_at.is_(None)
     )

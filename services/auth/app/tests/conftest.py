@@ -1,12 +1,13 @@
 import uuid
 from collections.abc import AsyncGenerator
+from typing import Any
 
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from shared.core.models.base import Base
 from shared.core.security.jwt import JWTHandler
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 TEST_DB_URL = "postgresql+asyncpg://auth:auth_pass@localhost:5432/auth_test_db"
 TEST_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
@@ -20,9 +21,8 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Z3VS5JJcds3xHn/ygWe
 -----END PUBLIC KEY-----"""
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session")  # type: ignore[misc]
 def jwt_handler() -> JWTHandler:
-    # Use a simple HS256 handler for tests (override to RS256 in real CI)
     import os
 
     private_key = os.environ.get("TEST_JWT_PRIVATE_KEY", TEST_PRIVATE_KEY)
@@ -30,18 +30,18 @@ def jwt_handler() -> JWTHandler:
     return JWTHandler(private_key=private_key, public_key=public_key)
 
 
-@pytest_asyncio.fixture(scope="session")
-async def engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
-    async with engine.begin() as conn:
+@pytest_asyncio.fixture(scope="session")  # type: ignore[misc]
+async def engine() -> AsyncGenerator[AsyncEngine, None]:
+    eng = create_async_engine(TEST_DB_URL, echo=False)
+    async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
-    yield engine
-    await engine.dispose()
+    yield eng
+    await eng.dispose()
 
 
-@pytest_asyncio.fixture()
-async def session(engine) -> AsyncGenerator[AsyncSession, None]:
+@pytest_asyncio.fixture()  # type: ignore[misc]
+async def session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
     factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     async with factory() as s:
         async with s.begin():
@@ -49,8 +49,8 @@ async def session(engine) -> AsyncGenerator[AsyncSession, None]:
             await s.rollback()
 
 
-@pytest_asyncio.fixture()
-async def client(session, jwt_handler) -> AsyncGenerator[AsyncClient, None]:
+@pytest_asyncio.fixture()  # type: ignore[misc]
+async def client(session: AsyncSession, jwt_handler: JWTHandler) -> AsyncGenerator[AsyncClient, None]:
     import app.main as main_module
     from app.main import app
 
@@ -65,6 +65,6 @@ async def client(session, jwt_handler) -> AsyncGenerator[AsyncClient, None]:
     app.dependency_overrides.clear()
 
 
-@pytest.fixture()
+@pytest.fixture()  # type: ignore[misc]
 def tenant_id() -> uuid.UUID:
     return uuid.uuid4()

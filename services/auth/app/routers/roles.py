@@ -1,5 +1,5 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from shared.core.exceptions import AuthorizationError, NotFoundError
@@ -18,9 +18,9 @@ router = APIRouter(prefix="/roles", tags=["roles"])
 async def list_roles(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> list:
+) -> list[Any]:
     repo = RoleRepository(session)
-    return await repo.list_by_tenant(current_user.tenant_id)
+    return await repo.list_by_tenant(current_user.tenant_id)  # type: ignore[return-value]
 
 
 @router.post("", response_model=RoleResponse, status_code=201)

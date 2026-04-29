@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
 from shared.core.security.jwt import JWTHandler
@@ -88,7 +88,7 @@ async def forgot_password(
     body: ForgotPasswordRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
     jwt: Annotated[JWTHandler, Depends(get_jwt_handler)],
-) -> dict:
+) -> dict[str, Any]:
     svc = AuthService(session, jwt)
     await svc.forgot_password(body.tenant_slug, body.email)
     return {"message": "If the email exists, a reset link has been sent"}
@@ -119,7 +119,7 @@ async def change_password(
 async def mfa_enable(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict:
+) -> dict[str, Any]:
     secret = TOTPHandler.generate_secret()
     current_user.mfa_secret = secret  # store temporarily; confirmed on /mfa/verify
     await session.commit()

@@ -75,7 +75,7 @@ register_exception_handlers(app)
 
 async def _check_redis() -> bool:
     try:
-        await _redis.ping()  # type: ignore[union-attr]
+        await _redis.ping()  # type: ignore[union-attr, misc]
         return True
     except Exception:
         return False
@@ -123,7 +123,7 @@ async def route(service: str, path: str, request: Request) -> Response:
     try:
         await apply_rate_limits(
             request,
-            _rate_limiter,  # type: ignore[arg-type]
+            _rate_limiter,
             settings.rate_limit_per_ip_rps,
             settings.rate_limit_per_tenant_rps,
         )
@@ -133,4 +133,4 @@ async def route(service: str, path: str, request: Request) -> Response:
             content={"error": "rate_limit_exceeded", "message": str(e)},
         )
 
-    return await proxy_request(request, upstream, _http_client)  # type: ignore[arg-type]
+    return await proxy_request(request, upstream, _http_client)  # type: ignore[no-any-return, arg-type]

@@ -16,7 +16,7 @@ class Role(Base, PrimaryKeyMixin, TimestampMixin):
     )
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     is_system: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    permissions: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    permissions: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
 
     users: Mapped[list["UserRole"]] = relationship("UserRole", back_populates="role", lazy="noload")
 
@@ -59,8 +59,8 @@ class User(Base, PrimaryKeyMixin, TimestampMixin, SoftDeleteMixin):
     user_roles: Mapped[list[UserRole]] = relationship(
         "UserRole", back_populates="user", lazy="selectin", cascade="all, delete-orphan"
     )
-    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(  # noqa: F821
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship(  # noqa: F821  # type: ignore[name-defined]
         "RefreshToken",
         back_populates="user",
-        lazy="noload",  # type: ignore[name-defined]
+        lazy="noload",
     )

@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from shared.core.exceptions import ConflictError, NotFoundError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -83,7 +84,7 @@ class TenantService:
             raise NotFoundError("Tenant not found")
         return tenant
 
-    async def get_stats(self, tenant_id: uuid.UUID) -> dict:
+    async def get_stats(self, tenant_id: uuid.UUID) -> dict[str, Any]:
         total = await self._tenant_repo.count_active_users(tenant_id)
         tenant = await self._tenant_repo.get_by_id(tenant_id)
         return {

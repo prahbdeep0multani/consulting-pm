@@ -38,7 +38,7 @@ class RedisCache:
 
     async def ping(self) -> bool:
         try:
-            await self._client.ping()
+            await self._client.ping()  # type: ignore[misc]
             return True
         except Exception:
             return False

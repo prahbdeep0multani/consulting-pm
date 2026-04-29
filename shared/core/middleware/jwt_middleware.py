@@ -1,4 +1,4 @@
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
@@ -28,11 +28,11 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         self._jwt = jwt_handler
         self._public_prefixes = _AUTH_PUBLIC_PREFIXES + public_prefixes
 
-    async def dispatch(self, request: Request, call_next: object) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         path = request.url.path
 
         if path in _PUBLIC_PATHS or any(path.startswith(p) for p in self._public_prefixes):
-            return await call_next(request)  # type: ignore[operator]
+            return await call_next(request)
 
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
@@ -59,4 +59,4 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
         request.state.roles = claims.roles
         request.state.permissions = claims.permissions
 
-        return await call_next(request)  # type: ignore[operator, return-value]
+        return await call_next(request)

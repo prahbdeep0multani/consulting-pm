@@ -1,4 +1,5 @@
 import uuid
+from typing import Any
 
 from shared.core.exceptions import ConflictError, NotFoundError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -42,8 +43,9 @@ class UserService:
             raise NotFoundError("User not found")
         return user
 
-    async def list_users(self, tenant_id: uuid.UUID, limit: int = 20, offset: int = 0) -> list:
-        return await self._user_repo.list_by_tenant(tenant_id, limit, offset)
+    async def list_users(self, tenant_id: uuid.UUID, limit: int = 20, offset: int = 0) -> list[Any]:
+        result: list[Any] = await self._user_repo.list_by_tenant(tenant_id, limit, offset)
+        return result
 
     async def update_user(self, user_id: uuid.UUID, **kwargs: object) -> object:
         user = await self._user_repo.get_by_id(user_id)

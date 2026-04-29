@@ -62,7 +62,7 @@ class JWTHandler:
             "jti": str(uuid.uuid4()),
             "token_type": "access",
         }
-        return jwt.encode(payload, self._private_key, algorithm=ALGORITHM)
+        return str(jwt.encode(payload, self._private_key, algorithm=ALGORITHM))
 
     def create_refresh_token(
         self,

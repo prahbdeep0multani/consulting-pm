@@ -49,7 +49,7 @@ register_exception_handlers(app)
 
 
 async def _check_db() -> bool:
-    return await check_db()
+    return bool(await check_db())
 
 
 app.include_router(create_health_router("auth", [("database", _check_db)]))

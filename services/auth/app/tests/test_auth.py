@@ -2,8 +2,8 @@ import pytest
 from httpx import AsyncClient
 
 
-@pytest.fixture()
-async def registered_tenant(client: AsyncClient) -> dict:
+@pytest.fixture()  # type: ignore[misc]
+async def registered_tenant(client: AsyncClient) -> dict[str, str]:
     response = await client.post(
         "/tenants",
         json={
@@ -19,8 +19,8 @@ async def registered_tenant(client: AsyncClient) -> dict:
     return {"slug": "auth-test-corp", "email": "admin@auth-test.com", "password": "Securepass123!"}
 
 
-@pytest.mark.asyncio
-async def test_login_success(client: AsyncClient, registered_tenant: dict) -> None:
+@pytest.mark.asyncio  # type: ignore[misc]
+async def test_login_success(client: AsyncClient, registered_tenant: dict[str, str]) -> None:
     response = await client.post(
         "/auth/login",
         json={
@@ -36,8 +36,8 @@ async def test_login_success(client: AsyncClient, registered_tenant: dict) -> No
     assert data["token_type"] == "bearer"
 
 
-@pytest.mark.asyncio
-async def test_login_wrong_password(client: AsyncClient, registered_tenant: dict) -> None:
+@pytest.mark.asyncio  # type: ignore[misc]
+async def test_login_wrong_password(client: AsyncClient, registered_tenant: dict[str, str]) -> None:
     response = await client.post(
         "/auth/login",
         json={
@@ -49,8 +49,8 @@ async def test_login_wrong_password(client: AsyncClient, registered_tenant: dict
     assert response.status_code == 401
 
 
-@pytest.mark.asyncio
-async def test_refresh_token_rotation(client: AsyncClient, registered_tenant: dict) -> None:
+@pytest.mark.asyncio  # type: ignore[misc]
+async def test_refresh_token_rotation(client: AsyncClient, registered_tenant: dict[str, str]) -> None:
     login_resp = await client.post(
         "/auth/login",
         json={
@@ -83,7 +83,7 @@ async def test_refresh_token_rotation(client: AsyncClient, registered_tenant: di
     assert reuse_resp.status_code == 401
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_tenant_isolation(client: AsyncClient) -> None:
     """Users from tenant A cannot log in with tenant B's slug."""
     await client.post(

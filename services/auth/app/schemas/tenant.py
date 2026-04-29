@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import Field
 from shared.core.schemas.base import BaseSchema
@@ -16,7 +17,7 @@ class TenantCreate(BaseSchema):
 
 class TenantUpdate(BaseSchema):
     name: str | None = None
-    settings: dict | None = None
+    settings: dict[str, Any] | None = None
 
 
 class TenantResponse(BaseSchema):

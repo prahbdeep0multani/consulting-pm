@@ -2,7 +2,7 @@ import pytest
 from httpx import AsyncClient
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_register_tenant(client: AsyncClient) -> None:
     response = await client.post(
         "/tenants",
@@ -21,7 +21,7 @@ async def test_register_tenant(client: AsyncClient) -> None:
     assert data["name"] == "Test Corporation"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio  # type: ignore[misc]
 async def test_duplicate_slug_rejected(client: AsyncClient) -> None:
     payload = {
         "slug": "dup-corp",

@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, time
+from typing import Any
 
 from shared.core.models.base import Base, PrimaryKeyMixin, TenantMixin
 from sqlalchemy import JSON, Boolean, DateTime, String, Text, Time, UniqueConstraint
@@ -16,7 +17,7 @@ class Notification(Base, PrimaryKeyMixin, TenantMixin):
     type: Mapped[str] = mapped_column(String(80), nullable=False)  # e.g. "task.assigned"
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    payload: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     channel: Mapped[str] = mapped_column(String(20), nullable=False, default="in_app")
     is_read: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

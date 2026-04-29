@@ -1,6 +1,6 @@
 import uuid
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -13,9 +13,9 @@ class TenantMiddleware(BaseHTTPMiddleware):
     """Reads X-Tenant-ID header (set by gateway after JWT validation) and
     stores it in a ContextVar so repositories can enforce row-level isolation."""
 
-    async def dispatch(self, request: Request, call_next: object) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if request.url.path in _PUBLIC_PATHS:
-            return await call_next(request)  # type: ignore[operator]
+            return await call_next(request)
 
         tenant_id_str = request.headers.get("X-Tenant-ID")
         if tenant_id_str:
@@ -25,7 +25,7 @@ class TenantMiddleware(BaseHTTPMiddleware):
                 pass
 
         try:
-            response: Response = await call_next(request)  # type: ignore[operator]
+            response: Response = await call_next(request)
         finally:
             clear_tenant_id()
 

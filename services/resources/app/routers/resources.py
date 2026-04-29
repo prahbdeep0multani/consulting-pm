@@ -1,6 +1,6 @@
 import uuid
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from shared.core.exceptions import AuthorizationError, ConflictError, NotFoundError
@@ -56,7 +56,7 @@ async def list_allocations(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
     user_id_filter: uuid.UUID | None = None,
     project_id: uuid.UUID | None = None,
-) -> list:
+) -> list[Any]:
     q = select(Allocation).where(
         Allocation.tenant_id == get_current_tenant_id(), Allocation.deleted_at.is_(None)
     )
@@ -175,7 +175,7 @@ async def list_leave_requests(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
     user_id: Annotated[uuid.UUID, Depends(get_current_user_id)],
     roles: Annotated[set[str], Depends(get_user_roles)],
-) -> list:
+) -> list[Any]:
     q = select(LeaveRequest).where(LeaveRequest.tenant_id == get_current_tenant_id())
     if not roles.intersection({"tenant_admin", "project_manager"}):
         q = q.where(LeaveRequest.user_id == user_id)

@@ -4,8 +4,8 @@ _ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
-    return _ctx.hash(password)
+    return str(_ctx.hash(password))
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return _ctx.verify(plain, hashed)
+    return bool(_ctx.verify(plain, hashed))

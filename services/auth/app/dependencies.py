@@ -1,5 +1,5 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, cast
 
 from fastapi import Depends, Request
 from shared.core.exceptions import AuthenticationError, AuthorizationError
@@ -14,7 +14,7 @@ from .repositories.user_repo import UserRepository
 def get_jwt_handler() -> JWTHandler:
     from .main import jwt_handler
 
-    return jwt_handler
+    return cast(JWTHandler, jwt_handler)
 
 
 async def get_current_user(
