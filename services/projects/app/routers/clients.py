@@ -1,5 +1,5 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from shared.core.exceptions import NotFoundError
@@ -19,9 +19,9 @@ async def list_clients(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
     limit: int = 20,
     offset: int = 0,
-) -> list:
+) -> list[Any]:
     repo = ClientRepository(session)
-    return await repo.list(limit, offset)
+    return await repo.list(limit, offset)  # type: ignore[return-value]
 
 
 @router.post("", response_model=ClientResponse, status_code=201)

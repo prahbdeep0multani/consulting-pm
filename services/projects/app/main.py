@@ -12,7 +12,7 @@ from .database import check_db, init_db
 from .routers import attachments_router, clients_router, projects_router, tasks_router
 from .storage import MinIOStorage
 
-storage: MinIOStorage = None  # type: ignore[assignment]
+storage: MinIOStorage
 
 
 @asynccontextmanager

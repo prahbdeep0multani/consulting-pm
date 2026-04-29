@@ -1,6 +1,7 @@
 import uuid
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Any
 
 from shared.core.models.base import (
     Base,
@@ -59,7 +60,7 @@ class Project(Base, PrimaryKeyMixin, TenantMixin, TimestampMixin, SoftDeleteMixi
     currency: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
     manager_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     is_billable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    settings: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    settings: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
 
     milestones: Mapped[list["Milestone"]] = relationship("Milestone", lazy="noload")
     tasks: Mapped[list["Task"]] = relationship(
@@ -105,7 +106,7 @@ class Task(Base, PrimaryKeyMixin, TenantMixin, TimestampMixin, SoftDeleteMixin):
     )
     due_date: Mapped[date | None] = mapped_column(Date)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    labels: Mapped[list] = mapped_column(ARRAY(String), nullable=False, default=list)
+    labels: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=False, default=list)
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     subtasks: Mapped[list["Task"]] = relationship(

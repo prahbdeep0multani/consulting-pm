@@ -14,11 +14,12 @@ from ..schemas.project import (
     AttachmentUploadRequest,
     PresignedUploadResponse,
 )
+from ..storage import MinIOStorage
 
 router = APIRouter(tags=["attachments"])
 
 
-def get_storage():
+def get_storage() -> MinIOStorage:
     from ..main import storage
 
     return storage

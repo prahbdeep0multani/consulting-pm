@@ -1,6 +1,6 @@
 import uuid
 from datetime import UTC, datetime
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from shared.core.exceptions import NotFoundError
@@ -21,9 +21,9 @@ async def list_tasks(
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
     status: str | None = None,
     assignee_id: uuid.UUID | None = None,
-) -> list:
+) -> list[Any]:
     repo = TaskRepository(session)
-    return await repo.list(project_id, status, assignee_id, parent_only=True)
+    return await repo.list(project_id, status, assignee_id, parent_only=True)  # type: ignore[return-value]
 
 
 @router.post("/projects/{project_id}/tasks", response_model=TaskResponse, status_code=201)
@@ -91,7 +91,7 @@ async def list_subtasks(
     task_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
-) -> list:
+) -> list[Any]:
     repo = TaskRepository(session)
     task = await repo.get(task_id)
     if not task:
@@ -108,9 +108,9 @@ async def list_comments(
     task_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
-) -> list:
+) -> list[Any]:
     repo = CommentRepository(session)
-    return await repo.list(task_id)
+    return await repo.list(task_id)  # type: ignore[return-value]
 
 
 @router.post("/tasks/{task_id}/comments", response_model=CommentResponse, status_code=201)

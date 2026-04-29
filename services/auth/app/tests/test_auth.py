@@ -50,7 +50,9 @@ async def test_login_wrong_password(client: AsyncClient, registered_tenant: dict
 
 
 @pytest.mark.asyncio  # type: ignore[misc]
-async def test_refresh_token_rotation(client: AsyncClient, registered_tenant: dict[str, str]) -> None:
+async def test_refresh_token_rotation(
+    client: AsyncClient, registered_tenant: dict[str, str]
+) -> None:
     login_resp = await client.post(
         "/auth/login",
         json={

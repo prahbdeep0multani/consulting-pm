@@ -15,8 +15,8 @@ class EventPublisher:
 
     async def publish(self, stream: str, event: BaseEvent) -> str:
         """XADD event to stream. Returns the stream entry ID."""
-        msg_id: str = await self._redis.xadd(
-            stream, event.to_stream_dict(), maxlen=10_000, approximate=True  # type: ignore[arg-type]
+        msg_id: str = await self._redis.xadd(  # type: ignore[arg-type]
+            stream, event.to_stream_dict(), maxlen=10_000, approximate=True
         )
         return msg_id
 

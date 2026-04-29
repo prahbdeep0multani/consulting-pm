@@ -1,5 +1,5 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends
 from shared.core.exceptions import NotFoundError
@@ -28,9 +28,9 @@ async def list_projects(
     client_id: uuid.UUID | None = None,
     limit: int = 20,
     offset: int = 0,
-) -> list:
+) -> list[Any]:
     repo = ProjectRepository(session)
-    return await repo.list(limit, offset, status, client_id)
+    return await repo.list(limit, offset, status, client_id)  # type: ignore[return-value]
 
 
 @router.post("/projects", response_model=ProjectResponse, status_code=201)
@@ -97,9 +97,9 @@ async def list_milestones(
     project_id: uuid.UUID,
     session: Annotated[AsyncSession, Depends(get_session)],
     _: Annotated[None, Depends(get_current_tenant_id_dep)],
-) -> list:
+) -> list[Any]:
     repo = MilestoneRepository(session)
-    return await repo.list(project_id)
+    return await repo.list(project_id)  # type: ignore[return-value]
 
 
 @router.post("/projects/{project_id}/milestones", response_model=MilestoneResponse, status_code=201)

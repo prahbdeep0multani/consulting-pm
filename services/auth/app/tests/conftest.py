@@ -7,7 +7,12 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from shared.core.models.base import Base
 from shared.core.security.jwt import JWTHandler
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 TEST_DB_URL = "postgresql+asyncpg://auth:auth_pass@localhost:5432/auth_test_db"
 TEST_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
@@ -50,7 +55,9 @@ async def session(engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest_asyncio.fixture()  # type: ignore[misc]
-async def client(session: AsyncSession, jwt_handler: JWTHandler) -> AsyncGenerator[AsyncClient, None]:
+async def client(
+    session: AsyncSession, jwt_handler: JWTHandler
+) -> AsyncGenerator[AsyncClient, None]:
     import app.main as main_module
     from app.main import app
 
