@@ -1,5 +1,3 @@
-from typing import Any
-
 import redis.asyncio as aioredis
 
 from .schemas.base import BaseEvent

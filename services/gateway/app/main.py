@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if _http_client:
         await _http_client.aclose()
     if _redis:
-        await _redis.aclose()  # type: ignore[attr-defined]
+        await _redis.aclose()
 
 
 app = FastAPI(title="API Gateway", version="0.1.0", lifespan=lifespan)
