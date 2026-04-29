@@ -48,10 +48,10 @@ class EventConsumer:
         stream_ids = dict.fromkeys(self._streams, ">")
         while self._running:
             try:
-                results = await self._redis.xreadgroup(  # type: ignore[arg-type]
+                results = await self._redis.xreadgroup(
                     self._service,
                     f"{self._service}-consumer-1",
-                    stream_ids,
+                    stream_ids,  # type: ignore[arg-type]
                     count=self._batch_size,
                     block=self._block_ms,
                 )
