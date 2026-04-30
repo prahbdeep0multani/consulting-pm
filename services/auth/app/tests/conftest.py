@@ -8,7 +8,6 @@ from httpx import ASGITransport, AsyncClient
 from shared.core.models.base import Base
 from shared.core.security.jwt import JWTHandler
 from sqlalchemy.ext.asyncio import (
-    AsyncConnection,
     AsyncEngine,
     AsyncSession,
     create_async_engine,
