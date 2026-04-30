@@ -17,9 +17,9 @@ class EventPublisher:
         """XADD event to stream. Returns the stream entry ID."""
         msg_id: str = await self._redis.xadd(
             stream,
-            event.to_stream_dict(),
+            event.to_stream_dict(),  # type: ignore[arg-type]
             maxlen=10_000,
-            approximate=True,  # type: ignore[arg-type]
+            approximate=True,
         )
         return msg_id
 
